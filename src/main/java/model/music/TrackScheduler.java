@@ -1,6 +1,6 @@
-package Model.music;
+package model.music;
 
-import Startup.DiscordBot;
+import startup.DiscordBot;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
@@ -131,5 +131,6 @@ public class TrackScheduler extends AudioEventAdapter {
         musicChannel.editMessageById(currentTrackId, current.build()).queue();
         musicChannel.editMessageById(queueId, queue.build()).queue();
     }
+
 }
 

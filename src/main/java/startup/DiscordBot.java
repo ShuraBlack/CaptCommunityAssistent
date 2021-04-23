@@ -1,4 +1,4 @@
-package Startup;
+package startup;
 
 import com.mysql.cj.log.Slf4JLogger;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
@@ -22,7 +22,7 @@ import java.util.Properties;
  */
 public class DiscordBot {
 
-    // Instance of Startup.DiscordBot
+    // Instance of startup.DiscordBot
     public static DiscordBot INSTANCE;
 
     // Configs for Discord Bot and MySQL
@@ -63,7 +63,6 @@ public class DiscordBot {
         PROPERTIES = loadProps();
 
         this.playerManager = new DefaultAudioPlayerManager();
-        playerManager.getConfiguration().setFilterHotSwapEnabled(true);
         this.musicManager = new MusicManager(this.playerManager);
 
         try {
@@ -176,7 +175,7 @@ public class DiscordBot {
 
     /**
      * getManager
-     * @return Startup.CommandManager
+     * @return startup.CommandManager
      */
     public CommandManager getCManager() {
         return CManager;

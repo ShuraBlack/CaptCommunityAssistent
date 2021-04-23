@@ -1,7 +1,7 @@
 package commands;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -43,7 +43,7 @@ public class Promo implements ServerCommand {
             }
         } else if (args.length == 3) {
             LoadDriver ld = new LoadDriver();
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTOPENPROMO(m.getId()), SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTOPENPROMO(m.getId()), SQLUtil.SELECTREQUESTTYPE);
             try {
                 if (rs.next()) {
                     EmbedBuilder ebdeny = new EmbedBuilder()
@@ -56,13 +56,13 @@ public class Promo implements ServerCommand {
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
-            ld.executeSQL(SQLRequests.INSERTPROMO(args[1],args[2],m.getId()), SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTPROMO(args[1],args[2],m.getId()), SQLUtil.INSERTREQUESTTYPE);
             EmbedBuilder eballow = new EmbedBuilder()
                     .setColor(Color.YELLOW)
                     .setTitle("Anfrage auf Promotion GESTELLT")
                     .setDescription(m.getAsMention() + ", dein Antrag wurde versendet und wird in kürze verarbeitet!");
             channel.sendMessage(eballow.build()).complete().delete().queueAfter(10, TimeUnit.SECONDS);
-            ResultSet rs2 = ld.executeSQL(SQLRequests.SELECTOPENPROMO(m.getId()), SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs2 = ld.executeSQL(SQLUtil.SELECTOPENPROMO(m.getId()), SQLUtil.SELECTREQUESTTYPE);
             try {
                 rs2.next();
                 EmbedBuilder eb = new EmbedBuilder()
@@ -92,8 +92,8 @@ public class Promo implements ServerCommand {
         if (args.length == 3) {
             if (args[1].equals("Y")) {
                 LoadDriver ld = new LoadDriver();
-                ld.executeSQL(SQLRequests.UPDATEPROMOSTATUS(args[2]), SQLRequests.UPDATEREQUESTTYPE);
-                ResultSet rs = ld.executeSQL(SQLRequests.SELECTIDTOPROMO(args[2]), SQLRequests.SELECTREQUESTTYPE);
+                ld.executeSQL(SQLUtil.UPDATEPROMOSTATUS(args[2]), SQLUtil.UPDATEREQUESTTYPE);
+                ResultSet rs = ld.executeSQL(SQLUtil.SELECTIDTOPROMO(args[2]), SQLUtil.SELECTREQUESTTYPE);
                 try {
                     rs.next();
                     EmbedBuilder eb = new EmbedBuilder()
@@ -113,7 +113,7 @@ public class Promo implements ServerCommand {
                 ld.close();
             } else if (args[1].equals("N")) {
                 LoadDriver ld = new LoadDriver();
-                ResultSet rs = ld.executeSQL(SQLRequests.SELECTIDTOPROMO(args[2]), SQLRequests.SELECTREQUESTTYPE);
+                ResultSet rs = ld.executeSQL(SQLUtil.SELECTIDTOPROMO(args[2]), SQLUtil.SELECTREQUESTTYPE);
                 try {
                     rs.next();
                     EmbedBuilder eb = new EmbedBuilder()
@@ -132,8 +132,8 @@ public class Promo implements ServerCommand {
                 ld.close();
             } else if (args[1].equals("P")) {
                 LoadDriver ld = new LoadDriver();
-                ld.executeSQL(SQLRequests.UPDATEPROMOABO(args[2]), SQLRequests.UPDATEREQUESTTYPE);
-                ResultSet rs = ld.executeSQL(SQLRequests.SELECTIDTOPROMO(args[2]), SQLRequests.SELECTREQUESTTYPE);
+                ld.executeSQL(SQLUtil.UPDATEPROMOABO(args[2]), SQLUtil.UPDATEREQUESTTYPE);
+                ResultSet rs = ld.executeSQL(SQLUtil.SELECTIDTOPROMO(args[2]), SQLUtil.SELECTREQUESTTYPE);
                 try {
                     rs.next();
                     EmbedBuilder eb = new EmbedBuilder()
@@ -167,7 +167,7 @@ public class Promo implements ServerCommand {
                         "um eine Anfrage zu erstellen. Wenn du den Discord boostest kannst du ebenfalls eine Promotion erstellen, wenn der wunsch besteht.")
                 .setFooter("CaptCommunity Team");
         LoadDriver ld = new LoadDriver();
-        ResultSet rs = ld.executeSQL(SQLRequests.SELECTPROMO(), SQLRequests.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTPROMO(), SQLUtil.SELECTREQUESTTYPE);
         try {
             while (rs.next()) {
                 String version = "";

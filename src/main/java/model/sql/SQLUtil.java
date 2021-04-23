@@ -1,6 +1,6 @@
-package Model.sql;
+package model.sql;
 
-public class SQLRequests {
+public class SQLUtil {
 
     /*-- Request types -----------------------------------------------------------------------------------------------*/
     public final static byte INSERTREQUESTTYPE = 0;

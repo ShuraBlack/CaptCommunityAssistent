@@ -1,4 +1,4 @@
-package Model.idle;
+package model.idle;
 
 import java.util.Random;
 

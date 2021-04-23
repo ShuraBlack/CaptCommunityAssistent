@@ -1,8 +1,8 @@
 package listener;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
-import Startup.DiscordBot;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
+import startup.DiscordBot;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -18,7 +18,7 @@ public class ReactionListener extends ListenerAdapter {
         }
 
         LoadDriver ld = new LoadDriver();
-        ResultSet rs = ld.executeSQL(SQLRequests.SELECTIDTOCOMMAND(event.getMessageId()), SQLRequests.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTIDTOCOMMAND(event.getMessageId()), SQLUtil.SELECTREQUESTTYPE);
         String command = null;
         try {
             if (rs.next()) {

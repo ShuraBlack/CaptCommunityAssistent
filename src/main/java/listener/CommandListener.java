@@ -1,6 +1,7 @@
 package listener;
 
-import Startup.DiscordBot;
+import startup.DiscordBot;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -29,10 +30,14 @@ public class CommandListener extends ListenerAdapter {
                 /*------------------------------------------ Special Cases -------------------------------------------*/
                 /*----------------------------------------------------------------------------------------------------*/
                 if(!DiscordBot.INSTANCE.getCManager().perform(args[0], event.getMember(), event.getTextChannel(), event.getMessage())) {
-                    event.getTextChannel().deleteMessageById(event.getMessageId()).queue();
+                    //event.getTextChannel().deleteMessageById(event.getMessageId()).queue();
                     event.getTextChannel().sendMessage("Unbekannter Befehl!")
                             .complete().delete().queueAfter(5, TimeUnit.SECONDS);
                 }
+            } else if (event.getTextChannel().getId().equals("804125567388483624")) {
+                event.getMessage().delete().queue();
+                MessageBuilder mes = new MessageBuilder().append("!player ").append(args[0]).append("XESCAPEX");
+                DiscordBot.INSTANCE.getCManager().perform("!player", event.getMember(), event.getTextChannel(), mes.build());
             }
         } else {
             if(message.startsWith("!ruler")) {

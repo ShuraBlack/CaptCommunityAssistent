@@ -1,7 +1,7 @@
 package commands;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -33,7 +33,7 @@ public class Clear implements ServerCommand {
         }
 
         LoadDriver ld = new LoadDriver();
-        ResultSet rs = ld.executeSQL(SQLRequests.SELECTMESSAGESIDS(), SQLRequests.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTMESSAGESIDS(), SQLUtil.SELECTREQUESTTYPE);
         try {
             while (rs.next()) {
                 activmessages.add(rs.getString(1));

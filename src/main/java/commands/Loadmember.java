@@ -1,7 +1,7 @@
 package commands;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -21,7 +21,7 @@ public class Loadmember implements ServerCommand {
 
         LoadDriver ld = new LoadDriver();
         for (Member mem : channel.getGuild().getMembers() ) {
-            ld.executeSQL(SQLRequests.INSERTMEMBER(mem.getId(),mem.getEffectiveName()),SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTMEMBER(mem.getId(),mem.getEffectiveName()), SQLUtil.INSERTREQUESTTYPE);
         }
         ld.close();
     }

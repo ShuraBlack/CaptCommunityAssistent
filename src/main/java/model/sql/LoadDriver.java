@@ -1,6 +1,6 @@
-package Model.sql;
+package model.sql;
 
-import Startup.DiscordBot;
+import startup.DiscordBot;
 import com.mysql.cj.log.Slf4JLogger;
 
 import java.sql.Connection;
@@ -57,7 +57,7 @@ public class LoadDriver {
     /**
      * Execution for the SQL Query Statments (no Prepared Statments)
      * @param command is your SQL Statment
-     * @param type is the typ of the Statment (SELECT,INSERT,etc.). You can use the SQLRequests Variables for more clean code
+     * @param type is the typ of the Statment (SELECT,INSERT,etc.). You can use the SQLUtil Variables for more clean code
      * @return the Resultset of your Query Statment
      * @apiNote uses the SQL Connection/J API - https://www.mysql.com/de/products/connector/
      * @since 10.03.2021

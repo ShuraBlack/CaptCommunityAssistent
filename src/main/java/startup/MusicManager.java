@@ -1,7 +1,7 @@
-package Startup;
+package startup;
 
-import Model.music.AudioPlayerSendHandler;
-import Model.music.TrackScheduler;
+import model.music.AudioPlayerSendHandler;
+import model.music.TrackScheduler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 

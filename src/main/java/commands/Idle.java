@@ -1,9 +1,9 @@
 package commands;
 
-import Model.idle.Peace;
-import Model.idle.War;
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.idle.Peace;
+import model.idle.War;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import com.mysql.cj.log.Slf4JLogger;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -52,10 +52,10 @@ public class Idle implements ServerCommand {
             activ = true;
             instance = new IdleGame(m.getEffectiveName(), m.getId(), channel);
 
-            ResultSet existsload = ld.executeSQL(SQLRequests.SELECTSAVEGAME(m.getId()), SQLRequests.SELECTREQUESTTYPE);
+            ResultSet existsload = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
             try {
                 if (existsload.next()) {
-                    ResultSet rs = ld.executeSQL(SQLRequests.SELECTSAVEGAME(m.getId()),SQLRequests.SELECTREQUESTTYPE);
+                    ResultSet rs = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
                     rs.next();
                     loadcode(rs.getString(1));
                 }
@@ -68,7 +68,7 @@ public class Idle implements ServerCommand {
             mesID = channel.sendMessage(eb.build()).complete().getId();
 
 
-            ld.executeSQL(SQLRequests.INSERTCOMMANDMESSAGE(mesID,"!idle"), SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(mesID,"!idle"), SQLUtil.INSERTREQUESTTYPE);
 
             ld.close();
 
@@ -164,14 +164,14 @@ public class Idle implements ServerCommand {
                 break;
             case "\uD83D\uDCE4": // Save
                 LoadDriver ld = new LoadDriver();
-                ResultSet exists = ld.executeSQL(SQLRequests.SELECTSAVEGAME(m.getId()), SQLRequests.SELECTREQUESTTYPE);
+                ResultSet exists = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
                 try {
                     if (!exists.next()) {
-                        ld.executeSQL(SQLRequests.INSERTSAVEGAME(m.getId(),SQLsavecode()), SQLRequests.INSERTREQUESTTYPE);
+                        ld.executeSQL(SQLUtil.INSERTSAVEGAME(m.getId(),SQLsavecode()), SQLUtil.INSERTREQUESTTYPE);
                     } else {
-                        ld.executeSQL(SQLRequests.UPDATESAVEGAME(m.getId(),SQLsavecode()),SQLRequests.UPDATEREQUESTTYPE);
+                        ld.executeSQL(SQLUtil.UPDATESAVEGAME(m.getId(),SQLsavecode()), SQLUtil.UPDATEREQUESTTYPE);
                     }
-                    ld.executeSQL(SQLRequests.DELETECOMMANDMESSAGE(mesID),SQLRequests.DELETEREQUESTTYPE);
+                    ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID), SQLUtil.DELETEREQUESTTYPE);
                     channel.deleteMessageById(mesID).queue();
                 } catch (SQLException throwables) {
                     Slf4JLogger logger = new Slf4JLogger("Idlegame.save");

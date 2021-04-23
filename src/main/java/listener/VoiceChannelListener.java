@@ -1,7 +1,7 @@
 package listener;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import com.mysql.cj.log.Slf4JLogger;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.VoiceChannel;
@@ -44,7 +44,7 @@ public class VoiceChannelListener extends ListenerAdapter {
             assert vc != null;
             event.getMember().getGuild()
                     .moveVoiceMember(event.getMember(),vc).queue();
-            ld.executeSQL(SQLRequests.INSERTTMPCHANNEL(newechannelid, event.getMember().getId()), SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newechannelid, event.getMember().getId()), SQLUtil.INSERTREQUESTTYPE);
             ld.close();
         }
     }
@@ -57,7 +57,7 @@ public class VoiceChannelListener extends ListenerAdapter {
         if (event.getChannelLeft().getMembers().isEmpty()) {
             LoadDriver ld = new LoadDriver();
             String channelid = event.getChannelLeft().getId();
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTTMPCHANNELS(channelid), SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid), SQLUtil.SELECTREQUESTTYPE);
             try {
                 if (rs.next()) {
                     if (!event.getChannelLeft().getMembers().isEmpty()) {
@@ -65,7 +65,7 @@ public class VoiceChannelListener extends ListenerAdapter {
                     }
                     removed.add(event.getChannelLeft().getId());
                     event.getChannelLeft().delete().queue();
-                    ld.executeSQL(SQLRequests.DELETETMPCHANNEL(channelid), SQLRequests.DELETEREQUESTTYPE);
+                    ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid), SQLUtil.DELETEREQUESTTYPE);
                 }
                 ld.close();
             } catch (SQLException throwables) {
@@ -100,10 +100,10 @@ public class VoiceChannelListener extends ListenerAdapter {
             assert vc != null;
             event.getMember().getGuild()
                     .moveVoiceMember(event.getMember(),vc).queue();
-            ld.executeSQL(SQLRequests.INSERTTMPCHANNEL(newchannelid, event.getMember().getId()), SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newchannelid, event.getMember().getId()), SQLUtil.INSERTREQUESTTYPE);
         }
 
-        ResultSet rs = ld.executeSQL(SQLRequests.SELECTTMPCHANNELS(event.getChannelLeft().getId()), SQLRequests.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(event.getChannelLeft().getId()), SQLUtil.SELECTREQUESTTYPE);
         String channelidleft = event.getChannelLeft().getId();
         try {
             if (rs.next()) {
@@ -112,7 +112,7 @@ public class VoiceChannelListener extends ListenerAdapter {
                 }
                 removed.add(event.getChannelLeft().getId());
                 event.getChannelLeft().delete().queue();
-                ld.executeSQL(SQLRequests.DELETETMPCHANNEL(channelidleft), SQLRequests.DELETEREQUESTTYPE);
+                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelidleft), SQLUtil.DELETEREQUESTTYPE);
             }
         } catch (SQLException throwables) {
             Slf4JLogger logger = new Slf4JLogger("VoiceChannelListener.Move.Left");
@@ -128,10 +128,10 @@ public class VoiceChannelListener extends ListenerAdapter {
         }
         LoadDriver ld = new LoadDriver();
         String channelid = event.getChannel().getId();
-        ResultSet rs = ld.executeSQL(SQLRequests.SELECTTMPCHANNELS(channelid), SQLRequests.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid), SQLUtil.SELECTREQUESTTYPE);
         try {
             if (rs.next()) {
-                ld.executeSQL(SQLRequests.DELETETMPCHANNEL(channelid), SQLRequests.DELETEREQUESTTYPE);
+                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid), SQLUtil.DELETEREQUESTTYPE);
             }
         } catch (SQLException throwables) {
             Slf4JLogger logger = new Slf4JLogger("VoiceChannelListener.Delete");

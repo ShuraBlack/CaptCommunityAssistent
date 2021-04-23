@@ -1,4 +1,4 @@
-package Startup;
+package startup;
 
 import commands.*;
 import commands.types.ServerCommand;

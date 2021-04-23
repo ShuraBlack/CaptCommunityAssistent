@@ -1,6 +1,6 @@
 package commands;
 
-import Startup.DiscordBot;
+import startup.DiscordBot;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;

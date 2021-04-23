@@ -1,14 +1,13 @@
 package commands;
 
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import commands.types.ServerCommand;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
-import org.w3c.dom.Text;
 
 
 import java.awt.*;
@@ -39,16 +38,16 @@ public class Playlist implements ServerCommand {
 
         LoadDriver ld = new LoadDriver();
         if (args.length == 4 && args[1].equals("add")) {
-            ld.executeSQL(SQLRequests.INSERTSONG(m.getId(),args[2],args[3]),SQLRequests.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTSONG(m.getId(),args[2],args[3]), SQLUtil.INSERTREQUESTTYPE);
             UserFeedback(channel, m, "Der Link " + args[3] + " wurde zur Playlist " + args[2] + " hinzugefügt", Color.GREEN);
         } else if (args.length == 3 && args[1].equals("remove") && args[2].equals("all")) {
-            ld.executeSQL(SQLRequests.DELETEALLSONGS(m.getId()),SQLRequests.DELETEREQUESTTYPE);
+            ld.executeSQL(SQLUtil.DELETEALLSONGS(m.getId()), SQLUtil.DELETEREQUESTTYPE);
             UserFeedback(channel, m,"Alle deine Links wurden entfernt", Color.RED);
         } else if (args.length == 3 && args[1].equals("remove")) {
-            ld.executeSQL(SQLRequests.DELETESONG(m.getId(),args[2]),SQLRequests.DELETEREQUESTTYPE);
+            ld.executeSQL(SQLUtil.DELETESONG(m.getId(),args[2]), SQLUtil.DELETEREQUESTTYPE);
             UserFeedback(channel, m,"Der Link " + args[2] + " wurde entfernt", Color.RED);
         } else if (args.length == 2 && args[1].equals("show")) {
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTALLSONGS(m.getId()),SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTALLSONGS(m.getId()), SQLUtil.SELECTREQUESTTYPE);
             try {
                 Map<String, Integer> songs = new TreeMap<>();
                 if (rs.next()) {
@@ -57,7 +56,7 @@ public class Playlist implements ServerCommand {
                         songs.put(rs.getString(1),rs.getInt(2));
                     }
                 }
-                rs = ld.executeSQL(SQLRequests.SELECTCOUNTPLAYLIST(m.getId()),SQLRequests.SELECTREQUESTTYPE);
+                rs = ld.executeSQL(SQLUtil.SELECTCOUNTPLAYLIST(m.getId()), SQLUtil.SELECTREQUESTTYPE);
                 rs.next();
                 channel.sendMessage(createSongMessage(songs,m,rs.getInt(1)).build())
                         .complete().delete().queueAfter(3, TimeUnit.MINUTES);
@@ -65,7 +64,7 @@ public class Playlist implements ServerCommand {
                 e.printStackTrace();
             }
         } else if (args.length == 3 && args[1].equals("show")) {
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTSONGPLAYLIST(m.getId(),args[2]),SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTSONGPLAYLIST(m.getId(),args[2]), SQLUtil.SELECTREQUESTTYPE);
             try {
                 Map<String, List<SongtoID>> songs = new TreeMap<>();
                 if (rs.next()) {
@@ -84,37 +83,9 @@ public class Playlist implements ServerCommand {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        } else if (args.length == 3 && args[1].equals("feed")) {
-            VoiceChannel vc = channel.getGuild().getVoiceChannelById("286629562098647051");
-            channel.getGuild().getAudioManager().openAudioConnection(vc);
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTSONGOFPLAYLIST(m.getId(),args[2]),SQLRequests.SELECTREQUESTTYPE);
-            List<String> songs = new LinkedList<>();
-            try {
-                if (rs.next()) {
-                    songs.add(rs.getString(1));
-                    while (rs.next()) {
-                        songs.add(rs.getString(1));
-                    }
-                }
-                Iterator<String> list = songs.iterator();
-                Timer timer = new Timer();
 
-                timer.scheduleAtFixedRate(new TimerTask() {
-
-                    @Override
-                    public void run() {
-                        channel.getGuild().getTextChannelById("804125567388483624").sendMessage(list.next()).queue();
-                        if (!list.hasNext()) {
-                            timer.cancel();
-                        }
-                    }
-                },1000,1000);
-                channel.getGuild().getAudioManager().closeAudioConnection();
-            } catch (SQLException throwables) {
-                throwables.printStackTrace();
-            }
         } else if (args.length == 2 && args[1].equals("list")) {
-            ResultSet rs = ld.executeSQL(SQLRequests.SELECTPLAYLISTS(m.getId()), SQLRequests.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTPLAYLISTS(m.getId()), SQLUtil.SELECTREQUESTTYPE);
             try {
                 List<String> playlists = new LinkedList<>();
                 while (rs.next()) {

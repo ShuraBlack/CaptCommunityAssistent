@@ -1,4 +1,4 @@
-package Model.dice;
+package model.dice;
 
 import net.dv8tion.jda.api.entities.Member;
 

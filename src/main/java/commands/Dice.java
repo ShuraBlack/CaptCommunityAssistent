@@ -1,9 +1,9 @@
 package commands;
 
 
-import Model.dice.DiceMatch;
-import Model.sql.LoadDriver;
-import Model.sql.SQLRequests;
+import model.dice.DiceMatch;
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -88,7 +88,7 @@ public class Dice implements ServerCommand {
                 initsToMes.put(m.getId(),matchid);
 
                 LoadDriver ld = new LoadDriver();
-                ld.executeSQL(SQLRequests.INSERTCOMMANDMESSAGE(matchid,"!dice"), SQLRequests.INSERTREQUESTTYPE);
+                ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(matchid,"!dice"), SQLUtil.INSERTREQUESTTYPE);
                 ld.close();
             } else {
                 try {
@@ -165,7 +165,7 @@ public class Dice implements ServerCommand {
         }
 
         LoadDriver ld = new LoadDriver();
-        ld.executeSQL(SQLRequests.DELETECOMMANDMESSAGE(mesID), SQLRequests.DELETEREQUESTTYPE);
+        ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID), SQLUtil.DELETEREQUESTTYPE);
         ld.close();
     }
 

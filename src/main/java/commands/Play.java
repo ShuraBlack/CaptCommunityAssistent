@@ -1,13 +1,14 @@
 package commands;
 
-import Startup.DiscordBot;
-import Startup.MusicManager;
+import startup.DiscordBot;
+import startup.MusicManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
@@ -19,10 +20,16 @@ import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class Play implements ServerCommand {
+
     @Override
     public void performCommand(Member m, TextChannel channel, Message message) {
-        message.delete().queue();
-        String[] args = message.getContentDisplay().split(" ");
+        if (message.getContentRaw().endsWith("XESCAPEX")) {
+            String fackMessage = message.getContentRaw().replace("XESCAPE","");
+            message = new MessageBuilder().append(fackMessage).build();
+        } else {
+            message.delete().queue();
+        }
+        String[] args = message.getContentRaw().split(" ");
 
         MusicManager musicManager = DiscordBot.INSTANCE.getAudioPlayer();
         if (!channel.getId().equals("804125567388483624")) {
@@ -35,7 +42,7 @@ public class Play implements ServerCommand {
         }
 
         if (args.length == 1) {
-            if(!m.hasPermission(channel, Permission.ADMINISTRATOR)) {
+            if (!m.hasPermission(channel, Permission.ADMINISTRATOR)) {
                 return;
             }
             createHelpMessage(channel);
@@ -259,6 +266,32 @@ public class Play implements ServerCommand {
     private void createQueueMessage (TextChannel channel) {
         EmbedBuilder eb = new EmbedBuilder()
                 .setTitle("Warteschlange:");
+        channel.sendMessage(eb.build()).queue();
+    }
+
+    public void editHelp (TextChannel channel) {
+        EmbedBuilder eb = new EmbedBuilder()
+                .setThumbnail("https://s20.directupload.net/images/210422/zpyz5gkv.png")
+                .setTitle("CaptCommunity MusicPlayer")
+                .setDescription("Die meisten aktionen lassen sich mit den Reactions ausführen, jedoch sind folgende " +
+                        "")
+                .addField("__Befehle:__", "\n" +
+                        "**[url]** ```cs\n" +
+                        "fügt ein Lied hinzu\n" +
+                        "```\n" +
+                        "**!player stop**```cs\n" +
+                        "beendet den player\n" +
+                        "```\n" +
+                        "**!player pause**```cs\n" +
+                        "pausiert das aktuelle Lied\n" +
+                        "```\n" +
+                        "**!player resume**```cs\n" +
+                        "führt das aktuelle Lied fort\n" +
+                        "```\n" +
+                        "**!player volume [0-100]**```cs\n" +
+                        "verändert die Lautstärke\n" +
+                        "```\n",false)
+                .setFooter("Made by ShuraBlack - Head of Server");
         channel.sendMessage(eb.build()).queue();
     }
 
