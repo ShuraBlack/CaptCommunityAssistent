@@ -1,5 +1,7 @@
 package commands;
 
+import model.sql.LoadDriver;
+import model.sql.SQLUtil;
 import startup.DiscordBot;
 import startup.MusicManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -15,16 +17,18 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.awt.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-public class Play implements ServerCommand {
+public class Player implements ServerCommand {
 
     @Override
     public void performCommand(Member m, TextChannel channel, Message message) {
         if (message.getContentRaw().endsWith("XESCAPEX")) {
-            String fackMessage = message.getContentRaw().replace("XESCAPE","");
+            String fackMessage = message.getContentRaw().replace("XESCAPEX","");
             message = new MessageBuilder().append(fackMessage).build();
         } else {
             message.delete().queue();
@@ -45,11 +49,12 @@ public class Play implements ServerCommand {
             if (!m.hasPermission(channel, Permission.ADMINISTRATOR)) {
                 return;
             }
-            createHelpMessage(channel);
-            createTemplateMessage(channel);
-            createQueueMessage(channel);
+            editHelp(channel);
+            //createHelpMessage(channel);
+            //createTemplateMessage(channel);
+            //createQueueMessage(channel);
             //addReactions(channel);
-        } else if (args.length == 2 && args[1].equals("next")) {
+        /*} else if (args.length == 2 && args[1].equals("next")) {
             skipTrack();
         } else if (args.length == 2 && args[1].equals("stop")) {
             musicManager.player.stopTrack();
@@ -59,47 +64,34 @@ public class Play implements ServerCommand {
         } else if (args.length == 2 && args[1].equals("pause")) {
             musicManager.player.setPaused(true);
         } else if (args.length == 2 && args[1].equals("resume")) {
-            musicManager.player.setPaused(false);
+            musicManager.player.setPaused(false);*/
         } else if (args.length == 3 && args[1].equals("volume")) {
             int volume = Integer.parseInt(args[2]);
             if (volume > 100 || volume < 0) {
                 return;
             }
             musicManager.player.setVolume(Integer.parseInt(args[2]));
-        } else {
-            DiscordBot.INSTANCE.getPlayerManager().loadItemOrdered(musicManager, args[1], new AudioLoadResultHandler() {
-                @Override
-                public void trackLoaded(AudioTrack track) {
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Hinzugefügt zur Warteschlange " + track.getInfo().title);
-                    channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
-
-                    if(!play(channel.getGuild(), musicManager, track, m, channel)) return;
-                    musicManager.scheduler.editQueueMessage();
-                }
-
-                @Override
-                public void playlistLoaded(AudioPlaylist playlist) {
-                    for (AudioTrack at : playlist.getTracks()) {
-                        if(!play(channel.getGuild(), musicManager, at, m, channel)) return;
+        } else if (args.length == 3 && args[1].equals("load")) {
+            LoadDriver ld = new LoadDriver();
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTSONGSOFPLAYLIST(m.getId(),args[2]),SQLUtil.SELECTREQUESTTYPE);
+            try {
+                if (rs.next()) {
+                    DiscordBot.INSTANCE.getPlayerManager().loadItemOrdered(musicManager
+                            , rs.getString(1), new LoadResultHandler(musicManager,m,channel,args,true));
+                    while (rs.next()) {
+                        DiscordBot.INSTANCE.getPlayerManager().loadItemOrdered(musicManager
+                                , rs.getString(1), new LoadResultHandler(musicManager,m,channel,args,true));
                     }
-                    musicManager.scheduler.editQueueMessage();
-
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Hinzugefügt zur Warteschlange " + playlist.getName());
-                    channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
+                } else {
+                    EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", du hast keine Playlist mit dem Namen " + args[2]);
+                    channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                 }
-
-                @Override
-                public void noMatches() {
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Kein Ergebnis für " + args[1]);
-                    channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
-                }
-
-                @Override
-                public void loadFailed(FriendlyException e) {
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Konnte " + args[1] + " nicht abspielen");
-                    channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
-                }
-            });
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } else {
+            DiscordBot.INSTANCE.getPlayerManager().loadItemOrdered(musicManager
+                    , args[1], new LoadResultHandler(musicManager,m,channel,args,false));
         }
 
     }
@@ -122,12 +114,12 @@ public class Play implements ServerCommand {
                 if (vc.getMembers().stream().map(ISnowflake::getId)
                         .anyMatch(id -> id.equals(DiscordBot.INSTANCE.Manager.getSelfUser().getId()))) {
                 } else {
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Verbinde dich zuvor mit dem aktiven VoiceChannel");
+                    EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", verbinde dich zuvor mit dem aktiven VoiceChannel");
                     channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                     return;
                 }
             } else {
-                EmbedBuilder eb = new EmbedBuilder().setDescription("Verbinde dich zuvor mit dem aktiven VoiceChannel");
+                EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", verbinde dich zuvor mit dem aktiven VoiceChannel");
                 channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                 return;
             }
@@ -208,7 +200,7 @@ public class Play implements ServerCommand {
                 audioManager.openAudioConnection(vc);
                 return true;
             } else {
-                EmbedBuilder eb = new EmbedBuilder().setDescription("Verbinde dich zuvor mit einem VoiceChannel");
+                EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", verbinde dich zuvor mit einem VoiceChannel");
                 channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                 return false;
             }
@@ -217,13 +209,13 @@ public class Play implements ServerCommand {
             if (vc != null) {
                 if (!vc.getMembers().stream().map(ISnowflake::getId)
                         .anyMatch(id -> id.equals(DiscordBot.INSTANCE.Manager.getSelfUser().getId()))) {
-                    EmbedBuilder eb = new EmbedBuilder().setDescription("Verbinde dich zuvor mit dem aktiven VoiceChannel");
+                    EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", verbinde dich zuvor mit dem aktiven VoiceChannel");
                     channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                     return false;
                 }
                 return true;
             } else {
-                EmbedBuilder eb = new EmbedBuilder().setDescription("Verbinde dich zuvor mit dem aktiven VoiceChannel");
+                EmbedBuilder eb = new EmbedBuilder().setDescription(m.getAsMention() + ", verbinde dich zuvor mit dem aktiven VoiceChannel");
                 channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
                 return false;
             }
@@ -274,25 +266,19 @@ public class Play implements ServerCommand {
                 .setThumbnail("https://s20.directupload.net/images/210422/zpyz5gkv.png")
                 .setTitle("CaptCommunity MusicPlayer")
                 .setDescription("Die meisten aktionen lassen sich mit den Reactions ausführen, jedoch sind folgende " +
-                        "")
+                        "über einen Befehl nutzbar")
                 .addField("__Befehle:__", "\n" +
                         "**[url]** ```cs\n" +
                         "fügt ein Lied hinzu\n" +
                         "```\n" +
-                        "**!player stop**```cs\n" +
-                        "beendet den player\n" +
-                        "```\n" +
-                        "**!player pause**```cs\n" +
-                        "pausiert das aktuelle Lied\n" +
-                        "```\n" +
-                        "**!player resume**```cs\n" +
-                        "führt das aktuelle Lied fort\n" +
+                        "**!player load [playlist]**```cs\n" +
+                        "läd eine von dir erstelle Playlist (\"!playlist\" in #bot-request)\n" +
                         "```\n" +
                         "**!player volume [0-100]**```cs\n" +
                         "verändert die Lautstärke\n" +
                         "```\n",false)
                 .setFooter("Made by ShuraBlack - Head of Server");
-        channel.sendMessage(eb.build()).queue();
+        channel.editMessageById("834810454517612574", eb.build()).queue();
     }
 
     public void addReactions (TextChannel channel) {
@@ -304,6 +290,58 @@ public class Play implements ServerCommand {
         channel.addReactionById(mesID,"\uD83D\uDD00").queue();
         channel.addReactionById(mesID,"\uD83D\uDD3B").queue();
         channel.addReactionById(mesID,"\uD83D\uDD3A").queue();
+    }
+
+    private class LoadResultHandler implements AudioLoadResultHandler {
+
+        private MusicManager musicManager;
+        private Member m;
+        private TextChannel channel;
+        private String[] args;
+        private boolean load;
+
+        public LoadResultHandler(MusicManager musicManager, Member m, TextChannel channel, String[] args, boolean load) {
+            this.musicManager = musicManager;
+            this.m = m;
+            this.channel = channel;
+            this.args = args;
+            this.load = load;
+        }
+
+        @Override
+        public void trackLoaded(AudioTrack track) {
+            if (!load) {
+                EmbedBuilder eb = new EmbedBuilder().setDescription("Hinzugefügt zur Warteschlange " + track.getInfo().title);
+                channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
+            }
+
+            if(!play(channel.getGuild(), musicManager, track, m, channel)) return;
+            musicManager.scheduler.editQueueMessage();
+        }
+
+        @Override
+        public void playlistLoaded(AudioPlaylist playlist) {
+            for (AudioTrack at : playlist.getTracks()) {
+                if(!play(channel.getGuild(), musicManager, at, m, channel)) return;
+            }
+            musicManager.scheduler.editQueueMessage();
+            if (!load) {
+                EmbedBuilder eb = new EmbedBuilder().setDescription("Hinzugefügt zur Warteschlange " + playlist.getName());
+                channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
+            }
+        }
+
+        @Override
+        public void noMatches() {
+            EmbedBuilder eb = new EmbedBuilder().setDescription("Kein Ergebnis für " + args[1]);
+            channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void loadFailed(FriendlyException e) {
+            EmbedBuilder eb = new EmbedBuilder().setDescription("Konnte " + args[1] + " nicht abspielen");
+            channel.sendMessage(eb.build()).complete().delete().queueAfter(7,TimeUnit.SECONDS);
+        }
     }
 
 }

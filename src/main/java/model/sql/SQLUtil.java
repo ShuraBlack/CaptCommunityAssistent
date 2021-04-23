@@ -23,7 +23,7 @@ public class SQLUtil {
         return "SELECT song,id FROM playlist p WHERE p.userid = '" + userid + "';";
     }
 
-    public static String SELECTSONGOFPLAYLIST (String userid, String playlist) {
+    public static String SELECTSONGSOFPLAYLIST (String userid, String playlist) {
         return "SELECT song FROM playlist WHERE userid = '" + userid + "' AND songlist = '" + playlist + "';";
     }
 
