@@ -1,11 +1,10 @@
 package model.music;
 
+import com.sedmelluq.discord.lavaplayer.track.*;
+import model.util.ChannelUtil;
 import startup.DiscordBot;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
-import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.TextChannel;
 
@@ -22,6 +21,7 @@ public class TrackScheduler extends AudioEventAdapter {
     private final BlockingQueue<AudioTrack> queue;
     private final String currentTrackId = "834810455431839774";
     private final String queueId = "834810456370708520";
+    private AudioTrack audioTrack = null;
 
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
@@ -35,11 +35,15 @@ public class TrackScheduler extends AudioEventAdapter {
     }
 
     public void nextTrack() {
-        if (queue.size() == 0) {
+        if (queue.size() == 0 && audioTrack == null) {
             clearMessages();
         }
-        player.startTrack(queue.poll(), false);
-        editQueueMessage();
+        if (audioTrack != null) {
+            player.startTrack(audioTrack.makeClone(),false);
+        } else {
+            player.startTrack(queue.poll(), false);
+            editQueueMessage();
+        }
     }
 
     public void randomizeQueue() {
@@ -62,16 +66,16 @@ public class TrackScheduler extends AudioEventAdapter {
         String url = info.uri;
         EmbedBuilder eb = (new EmbedBuilder()).setColor(Color.WHITE).addField(info.author, "["
                 + info.title + "](" + url + ")", false)
-                .addField("Dauer: ", info.isStream ? "Stream" : (hour > 0L ? hour + "h " : "")
+                .addField("Dauer: ", info.isStream ? "\uD83D\uDD34 Stream" : (hour > 0L ? hour + "h " : "")
                         + (min < 10 ? "0" + min : min) + "m "
                         + (sec < 10 ? "0" + sec : sec) + "s", true);
         if (url.startsWith("https://www.youtube.com/watch?v=")) {
             String videoID = url.replace("https://www.youtube.com/watch?v=", "");
             eb.setImage("https://img.youtube.com/vi/" + videoID + "/hqdefault.jpg");
-            DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088").getTextChannelById("804125567388483624")
+            DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088").getTextChannelById(ChannelUtil.MUSIC)
                     .editMessageById(currentTrackId,eb.build()).queue();
         } else {
-            DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088").getTextChannelById("804125567388483624")
+            DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088").getTextChannelById(ChannelUtil.MUSIC)
                     .editMessageById(currentTrackId,eb.build()).queue();
         }
     }
@@ -85,7 +89,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void editQueueMessage () {
         TextChannel musicChannel = DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088")
-                .getTextChannelById("804125567388483624");
+                .getTextChannelById(ChannelUtil.MUSIC);
 
         EmbedBuilder eb = new EmbedBuilder();
         StringBuilder s = new StringBuilder();
@@ -106,7 +110,7 @@ public class TrackScheduler extends AudioEventAdapter {
         min %= 60L;
         hour %= 60L;
 
-        eb.setTitle("Wartscheschlange").setFooter("Lieder: " + queue.size() + " Gesamtdauer: " + (hour > 0L ? hour + "h " : "")
+        eb.setTitle("Warteschlange").setFooter("Lieder: " + queue.size() + " - Gesamtdauer: " + (hour > 0L ? hour + "h " : "")
                 + (min < 10 ? "0" + min : min) + "m "
                 + (sec < 10 ? "0" + sec : sec) + "s");
         eb.setDescription(s.toString());
@@ -119,7 +123,7 @@ public class TrackScheduler extends AudioEventAdapter {
 
     public void clearMessages () {
         TextChannel musicChannel = DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088")
-                .getTextChannelById("804125567388483624");
+                .getTextChannelById(ChannelUtil.MUSIC);
         EmbedBuilder current = new EmbedBuilder()
                 .setTitle("Aktuelles Lied")
                 .addField("Author","Titel",false)
@@ -130,6 +134,14 @@ public class TrackScheduler extends AudioEventAdapter {
 
         musicChannel.editMessageById(currentTrackId, current.build()).queue();
         musicChannel.editMessageById(queueId, queue.build()).queue();
+    }
+
+    public AudioTrack getAudioTrack() {
+        return audioTrack;
+    }
+
+    public void setAudioTrack(AudioTrack audioTrack) {
+        this.audioTrack = audioTrack;
     }
 
 }

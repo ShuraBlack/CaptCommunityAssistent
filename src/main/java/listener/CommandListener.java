@@ -1,5 +1,6 @@
 package listener;
 
+import model.util.ChannelUtil;
 import startup.DiscordBot;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.entities.ChannelType;
@@ -22,6 +23,10 @@ public class CommandListener extends ListenerAdapter {
         if(event.getAuthor().equals(event.getJDA().getSelfUser())) {
             return;
         }
+
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
         String message = event.getMessage().getContentDisplay();
 
         if(event.isFromType(ChannelType.TEXT)) {
@@ -34,7 +39,7 @@ public class CommandListener extends ListenerAdapter {
                     event.getTextChannel().sendMessage("Unbekannter Befehl!")
                             .complete().delete().queueAfter(5, TimeUnit.SECONDS);
                 }
-            } else if (event.getTextChannel().getId().equals("804125567388483624")) {
+            } else if (event.getTextChannel().getId().equals(ChannelUtil.MUSIC)) {
                 event.getMessage().delete().queue();
                 MessageBuilder mes = new MessageBuilder().append("!player ").append(args[0]).append("XESCAPEX");
                 DiscordBot.INSTANCE.getCManager().perform("!player", event.getMember(), event.getTextChannel(), mes.build());

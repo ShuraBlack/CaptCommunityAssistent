@@ -1,7 +1,9 @@
 package commands;
 
 import model.sql.LoadDriver;
-import model.sql.SQLUtil;
+import model.sql.PlaylistModel;
+import model.util.ChannelUtil;
+import model.util.SQLUtil;
 import commands.types.ServerCommand;
 
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -16,17 +18,19 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import static model.util.SQLUtil.*;
 
 public class Playlist implements ServerCommand {
     @Override
     public void performCommand(Member m, TextChannel channel, Message message) {
+
         message.delete().queue();
 
         if(!m.hasPermission(channel, Permission.ADMINISTRATOR)) {
             return;
         }
 
-        if (!channel.getId().equals("818607332555489340")) {
+        if (!channel.getId().equals(ChannelUtil.BOTREQUEST)) {
             EmbedBuilder eb = new EmbedBuilder()
                     .setColor(Color.WHITE)
                     .setDescription("Nutze den " + channel.getGuild().getTextChannelById("818607332555489340").getAsMention() + " TextChannel");
@@ -38,25 +42,24 @@ public class Playlist implements ServerCommand {
 
         LoadDriver ld = new LoadDriver();
         if (args.length == 4 && args[1].equals("add")) {
-            ld.executeSQL(SQLUtil.INSERTSONG(m.getId(),args[2],args[3]), SQLUtil.INSERTREQUESTTYPE);
+            ld.executeSQL(INSERTSONG(m.getId(),args[2],args[3]));
             UserFeedback(channel, m, "Der Link " + args[3] + " wurde zur Playlist " + args[2] + " hinzugefügt", Color.GREEN);
         } else if (args.length == 3 && args[1].equals("remove") && args[2].equals("all")) {
-            ld.executeSQL(SQLUtil.DELETEALLSONGS(m.getId()), SQLUtil.DELETEREQUESTTYPE);
+            ld.executeSQL(DELETEALLSONGS(m.getId()));
             UserFeedback(channel, m,"Alle deine Links wurden entfernt", Color.RED);
         } else if (args.length == 3 && args[1].equals("remove")) {
-            ld.executeSQL(SQLUtil.DELETESONG(m.getId(),args[2]), SQLUtil.DELETEREQUESTTYPE);
+            ld.executeSQL(DELETESONG(m.getId(),args[2]));
             UserFeedback(channel, m,"Der Link " + args[2] + " wurde entfernt", Color.RED);
         } else if (args.length == 2 && args[1].equals("show")) {
-            ResultSet rs = ld.executeSQL(SQLUtil.SELECTALLSONGS(m.getId()), SQLUtil.SELECTREQUESTTYPE);
+
+            List<PlaylistModel> playlistModels = ld.executeSQLModelable(SELECTALLSONGS(m.getId())).getPlaylistModels();
             try {
                 Map<String, Integer> songs = new TreeMap<>();
-                if (rs.next()) {
-                    songs.put(rs.getString(1),rs.getInt(2));
-                    while (rs.next()) {
-                        songs.put(rs.getString(1),rs.getInt(2));
-                    }
+                for (PlaylistModel pm : playlistModels) {
+                    songs.put(pm.getSong(), pm.getId());
                 }
-                rs = ld.executeSQL(SQLUtil.SELECTCOUNTPLAYLIST(m.getId()), SQLUtil.SELECTREQUESTTYPE);
+
+                ResultSet rs = ld.executeSQL(SELECTCOUNTPLAYLIST(m.getId()));
                 rs.next();
                 channel.sendMessage(createSongMessage(songs,m,rs.getInt(1)).build())
                         .complete().delete().queueAfter(3, TimeUnit.MINUTES);
@@ -64,7 +67,7 @@ public class Playlist implements ServerCommand {
                 e.printStackTrace();
             }
         } else if (args.length == 3 && args[1].equals("show")) {
-            ResultSet rs = ld.executeSQL(SQLUtil.SELECTSONGPLAYLIST(m.getId(),args[2]), SQLUtil.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SELECTSONGPLAYLIST(m.getId(),args[2]));
             try {
                 Map<String, List<SongtoID>> songs = new TreeMap<>();
                 if (rs.next()) {
@@ -85,7 +88,7 @@ public class Playlist implements ServerCommand {
             }
 
         } else if (args.length == 2 && args[1].equals("list")) {
-            ResultSet rs = ld.executeSQL(SQLUtil.SELECTPLAYLISTS(m.getId()), SQLUtil.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SELECTPLAYLISTS(m.getId()));
             try {
                 List<String> playlists = new LinkedList<>();
                 while (rs.next()) {
@@ -121,6 +124,7 @@ public class Playlist implements ServerCommand {
                 s.append(playlist).append("\n");
             }
             eb.addField("Playlist/s: " + playlists.size(), s.toString(),false);
+            eb.setFooter("Diese Nachricht wird automatisch nach 3 Minuten gelöscht");
         }
         return eb;
     }

@@ -1,6 +1,7 @@
 package commands;
 
 import commands.types.ServerCommand;
+import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -18,6 +19,15 @@ public class Coinflip implements ServerCommand {
     public void performCommand(Member m, TextChannel channel, Message message) {
 
         message.delete().queue();
+
+        if (!channel.getId().equals(ChannelUtil.BOTREQUEST)) {
+            EmbedBuilder eb = new EmbedBuilder()
+                    .setColor(Color.WHITE)
+                    .setDescription("Nutze den " + channel.getGuild().getTextChannelById(ChannelUtil.BOTREQUEST)
+                            .getAsMention() + " TextChannel");
+            channel.sendMessage(eb.build()).complete().delete().queueAfter(5, TimeUnit.SECONDS);
+            return;
+        }
 
         Random rand = new Random();
         int rdmNum = rand.nextInt(2);

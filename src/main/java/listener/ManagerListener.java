@@ -1,5 +1,6 @@
 package listener;
 
+import model.web.Server;
 import net.dv8tion.jda.api.events.ReadyEvent;
 import net.dv8tion.jda.api.events.guild.GuildBanEvent;
 import net.dv8tion.jda.api.events.guild.GuildUnbanEvent;
@@ -7,27 +8,32 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import javax.annotation.Nonnull;
 
-public class ManagerListener extends ListenerAdapter {
+import static model.Logger.EntryLogger.logInfo;
+import static model.util.LoggerUtil.type.*;
 
-    private String lobbyid = "799449977394167859";
+public class ManagerListener extends ListenerAdapter {
 
     @Override
     public void onGuildBan (@Nonnull GuildBanEvent event) {
-        event.getGuild().getTextChannelById(lobbyid)
-                .sendMessage("\uD83D\uDD28 " + event.getUser().getAsMention() + " (" + event.getUser().getAsTag() +
-                        "), wurde des Servers verwiesen!").queue();
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
+
+        logInfo(event.getUser(),event.getUser().getName() + ", wurde des Servers verwiesen!", WARNING);
     }
 
     @Override
     public void onGuildUnban (@Nonnull GuildUnbanEvent event) {
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
 
-        event.getGuild().getTextChannelById(lobbyid)
-                .sendMessage("\uD83E\uDE79 " + event.getUser().getAsMention() + " (" + event.getUser().getAsTag() +
-                        "), wurde eine zweite Chance ermöglicht!").queue();
+        logInfo(event.getUser(),event.getUser().getName() + ", wurde eine zweite Chance ermöglicht!", EDIT);
     }
 
     @Override
     public void onReady (ReadyEvent event) {
-        System.out.println("JDA connected and ready for usage!");
+        new Server();
+        System.out.println("JDA connected and ready for use!");
     }
 }

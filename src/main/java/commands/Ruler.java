@@ -1,6 +1,8 @@
 package commands;
 
+import com.mysql.cj.log.Slf4JLogger;
 import commands.types.ServerCommand;
+import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -12,9 +14,9 @@ import java.util.*;
 
 public class Ruler implements ServerCommand {
 
-    private Set<String> ruleread = new TreeSet<>();
-    private Map<String,String> request = new TreeMap<>();
-    private Member[] memberlist = new Member[10];
+    private final Set<String> ruleread = new TreeSet<>();
+    private final Map<String,String> request = new TreeMap<>();
+    private final Member[] memberlist = new Member[10];
     String mesID = "804077314023227392";
 
     @Override
@@ -24,64 +26,74 @@ public class Ruler implements ServerCommand {
             return;
         }
 
-        if (!channel.getId().equals("799449909090713631")) {
+        if (!channel.getId().equals(ChannelUtil.ROLES)) {
             return;
         }
         String[] args = message.getContentDisplay().split(" ");
         if (args.length == 1) {
-            String[] reactionname = {"\uD83D\uDCD3","\uD83D\uDCD2","\uD83D\uDCD9","\uD83D\uDCD7","\uD83D\uDCD6"};
+            final Emote bronze = channel.getGuild().getEmoteById("844342554745110528");
+            final Emote silver = channel.getGuild().getEmoteById("844342560309903370");
+            final Emote gold = channel.getGuild().getEmoteById("844342559723880458");
+            final Emote platinum = channel.getGuild().getEmoteById("844342561073659934");
 
-            EmbedBuilder eb = createMessage();
+            EmbedBuilder eb = createMessage(channel);
+
+            //channel.editMessageById(mesID, eb.build()).complete().clearReactions().queue();
+            //channel.editMessageById(mesID,eb.build()).complete().addReaction("📃").queue();
+            //channel.editMessageById(mesID,eb.build()).complete().addReaction(bronze).queue();
+            //channel.editMessageById(mesID,eb.build()).complete().addReaction(silver).queue();
+            //channel.editMessageById(mesID,eb.build()).complete().addReaction(gold).queue();
+            //channel.editMessageById(mesID,eb.build()).complete().addReaction(platinum).queue();
             //mesID = channel.sendMessage(eb.build()).complete().getId();
-            for (String s : reactionname) {
-                channel.editMessageById(mesID,eb.build()).complete().addReaction(s).queue();
-            }
         }
     }
 
     @Override
     public void reactionperform(Member m, TextChannel channel, String mesID, String emote, MessageReactionAddEvent event) {
+        
+        final Emote bronze = channel.getGuild().getEmoteById("844342554745110528");
+        final Emote silver = channel.getGuild().getEmoteById("844342560309903370");
+        final Emote gold = channel.getGuild().getEmoteById("844342559723880458");
+        final Emote platinum = channel.getGuild().getEmoteById("844342561073659934");
 
-        // Grey,Yellow,Orange,Green
-        String[] reactionname = {"\uD83D\uDCD3","\uD83D\uDCD2","\uD83D\uDCD9","\uD83D\uDCD7"};
         Role guest = channel.getGuild().getRoleById("384133791595102218");
         Role member = channel.getGuild().getRoleById("286631357772201994");
 
         event.getReaction().removeReaction(m.getUser()).queue();
-
-        if (emote.equals("\uD83D\uDCD6")) {
+        if (emote.equals("📃")) {
             if (!ruleread.contains(m.getId())) {
                 ruleread.add(m.getId());
-                EmbedBuilder eb = createMessage();
+                EmbedBuilder eb = createMessage(channel);
                 eb.addField("","",false);
                 eb.addField("Letzter Status:",m.getEffectiveName() + " hat die Serverregeln akzeptiert!",false);
                 channel.editMessageById(mesID,eb.build()).queue();
-                System.out.println(m.getEffectiveName() + " accepted the Server rules!");
+                Slf4JLogger logger = new Slf4JLogger("Ruler.Rules");
+                logger.logInfo(m.getEffectiveName() + " accepted the Server rules");
             }
             return;
         }
         if (!ruleread.contains(m.getId())) {
             return;
         }
-        if (emote.equals(reactionname[0])) {
-            event.getGuild().addRoleToMember(m,guest).complete();
-            event.getGuild().removeRoleFromMember(m,member).complete();
+        if (emote.equals(bronze.getName())) {
+            event.getGuild().addRoleToMember(m,guest).queue();
+            event.getGuild().removeRoleFromMember(m,member).queue();
 
-            EmbedBuilder eb = createMessage();
+            EmbedBuilder eb = createMessage(channel);
             eb.addField("","",false);
             eb.addField("Letzter Status:",m.getEffectiveName() + " wurde zum Guest ernannt!",false);
             channel.editMessageById(mesID,eb.build()).queue();
 
-        } else if (emote.equals(reactionname[1])) {
-            event.getGuild().addRoleToMember(m,member).complete();
-            event.getGuild().removeRoleFromMember(m,guest).complete();
+        } else if (emote.equals(silver.getName())) {
+            event.getGuild().addRoleToMember(m,member).queue();
+            event.getGuild().removeRoleFromMember(m,guest).queue();
 
-            EmbedBuilder eb = createMessage();
+            EmbedBuilder eb = createMessage(channel);
             eb.addField("","",false);
             eb.addField("Letzter Status:",m.getEffectiveName() + " wurde zum Guest ernannt!",false);
             channel.editMessageById(mesID,eb.build()).queue();
 
-        } else if (emote.equals(reactionname[2])) {
+        } else if (emote.equals(gold.getName())) {
             if (request.containsKey(m.getId())) {
                 return;
             }
@@ -91,7 +103,7 @@ public class Ruler implements ServerCommand {
             eb.setColor(Color.WHITE);
             eb.setTitle("Ranganfrage auf > CaptCommunity <");
             eb.addField("Member: " + m.getEffectiveName(),
-                    "\nID: " + m.getId() + "\nRang: " + "Veteran " + reactionname[3] +
+                    "\nID: " + m.getId() + "\nRang: " + "Veteran " + gold.getAsMention() +
                             "\n\nAntworte mit -> !ruler Y/N ID",false);
             eb.setFooter(time.getDayOfMonth() + "." + time.getMonthValue() + "." + time.getYear() + " | "
                     + time.plusHours(2).getHour() + ":" + time.getMinute() + ":" + time.getSecond());
@@ -104,11 +116,11 @@ public class Ruler implements ServerCommand {
                 }
             }
 
-            EmbedBuilder ebx = createMessage();
+            EmbedBuilder ebx = createMessage(channel);
             ebx.addField("","",false);
             ebx.addField("Letzter Status:",m.getEffectiveName() + " hat eine Anfrage für Veteran abgegeben!",false);
             channel.editMessageById(mesID,ebx.build()).queue();
-        } else if (emote.equals(reactionname[3])) {
+        } else if (emote.equals(platinum.getName())) {
             if (request.containsKey(m.getId())) {
                 return;
             }
@@ -118,7 +130,7 @@ public class Ruler implements ServerCommand {
             eb.setColor(Color.WHITE);
             eb.setTitle("Ranganfrage auf > CaptCommunity <");
             eb.addField("Member: " + m.getEffectiveName(),
-                    "\nID: " + m.getId() + "\nRang: " + "Moderator " + reactionname[3] +
+                    "\nID: " + m.getId() + "\nRang: " + "Moderator " + platinum.getAsMention() +
                     "\n\nAntworte mit -> !ruler Y/N ID",false);
             eb.setFooter(time.getDayOfMonth() + "." + time.getMonthValue() + "." + time.getYear() + " | "
                     + time.plusHours(2).getHour() + ":" + time.getMinute() + ":" + time.getSecond());
@@ -130,7 +142,7 @@ public class Ruler implements ServerCommand {
                 }
             }
 
-            EmbedBuilder ebx = createMessage();
+            EmbedBuilder ebx = createMessage(channel);
             ebx.addField("","",false);
             ebx.addField("Letzter Status:",m.getEffectiveName() + " hat eine Anfrage für Moderator abgegeben!",false);
             channel.editMessageById(mesID,ebx.build()).queue();
@@ -198,23 +210,27 @@ public class Ruler implements ServerCommand {
         }
     }
 
-    public EmbedBuilder createMessage() {
-        // Grey,Yellow,Orange,Green
-        String[] reactionname = {"\uD83D\uDCD3","\uD83D\uDCD2","\uD83D\uDCD9","\uD83D\uDCD7"};
+    public EmbedBuilder createMessage(TextChannel channel) {
+
+        final Emote bronze = channel.getGuild().getEmoteById("844342554745110528");
+        final Emote silver = channel.getGuild().getEmoteById("844342560309903370");
+        final Emote gold = channel.getGuild().getEmoteById("844342559723880458");
+        final Emote platinum = channel.getGuild().getEmoteById("844342561073659934");
 
         EmbedBuilder eb = new EmbedBuilder();
         eb.setColor(Color.WHITE);
         eb.setTitle("Rollenverteilung - Nutzerhilfe");
-        eb.setDescription("Über den Bot ist jeder neue Nutzer des Servers in der lage sich die passende Rolle zu geben");
-        eb.addField("Bitte bestätige zuvor mit " + "\uD83D\uDCD6" + "das du die Server-Regeln gelesen hast!",
-                "Rollen mit Anfrage werden erst über Moderatoren geprüft bevor der Rang vergeben werden darf. Die Reaktion versendet den Antrag",false);
+        eb.setDescription("Über den Bot ist jeder neue Nutzer des Servers in der lage sich die passende Rolle zu geben\n" +
+                "Rollen mit Anfrage werden erst über Moderatoren geprüft bevor der Rang vergeben werden darf. Die Reaktion versendet den Antrag");
+        eb.addField("📃 Bestätigung (zuvor notwendig)"
+                ,"```diff\n- Du musst zuvor bestätigen das du die Regeln gelesen hast\n```",false);
         eb.addField("","Offene Rollen:",false);
-        eb.addField(reactionname[0] + "Guest,","Für jeden Nutzer der nur gelegentlich/einmalig auf dem" +
+        eb.addField(bronze.getAsMention() + "Guest,","Für jeden Nutzer der nur gelegentlich/einmalig auf dem" +
                 "Discord Server ist. Keine Besonderen Rechte",false);
-        eb.addField(reactionname[1] + "Member,","Für bekannte Mitspieler und Freunde die neuer sind",false);
+        eb.addField(silver.getAsMention() + "Member,","Für bekannte Mitspieler und Freunde die neuer sind",false);
         eb.addField("","Rollen mit Anfrage:",false);
-        eb.addField(reactionname[2] + "Veteran,","Für Mitglieder die bereits lange Zeit zu dem Server gehören",false);
-        eb.addField(reactionname[3] + "Moderator,","Für eine Anfrage zum Moderator oder das hinzufügen von Accounts als Moderator",false);
+        eb.addField(gold.getAsMention() + "Veteran,","Für Mitglieder die bereits lange Zeit zu dem Server gehören",false);
+        eb.addField(platinum.getAsMention() + "Moderator,","Für eine Anfrage zum Moderator oder das hinzufügen von Accounts als Moderator",false);
         eb.setFooter("Das Missbrauchen der Funktion führt zu einem Ausschluss");
         return eb;
     }

@@ -3,7 +3,8 @@ package commands;
 
 import model.dice.DiceMatch;
 import model.sql.LoadDriver;
-import model.sql.SQLUtil;
+import model.util.ChannelUtil;
+import model.util.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Member;
@@ -27,10 +28,11 @@ public class Dice implements ServerCommand {
 
         message.delete().queue();
 
-        if (!channel.getId().equals("818607332555489340")) {
+        if (!channel.getId().equals(ChannelUtil.BOTREQUEST)) {
             EmbedBuilder eb = new EmbedBuilder()
                     .setColor(Color.WHITE)
-                    .setDescription("Nutze den " + channel.getGuild().getTextChannelById("818607332555489340").getAsMention() + " TextChannel");
+                    .setDescription("Nutze den " + channel.getGuild().getTextChannelById(ChannelUtil.BOTREQUEST)
+                            .getAsMention() + " TextChannel");
             channel.sendMessage(eb.build()).complete().delete().queueAfter(5, TimeUnit.SECONDS);
             return;
         }
@@ -88,7 +90,7 @@ public class Dice implements ServerCommand {
                 initsToMes.put(m.getId(),matchid);
 
                 LoadDriver ld = new LoadDriver();
-                ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(matchid,"!dice"), SQLUtil.INSERTREQUESTTYPE);
+                ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(matchid,"!dice"));
                 ld.close();
             } else {
                 try {
@@ -137,7 +139,7 @@ public class Dice implements ServerCommand {
             return;
         }
         if (!emote.equals("✅") && !emote.equals("❎")) {
-            channel.editMessageById(mesID, startMatchMessage(matches.get(mesID)).build()).complete().removeReaction(emote,m.getUser()).queue();
+            event.getReaction().removeReaction(m.getUser()).queue();
             return;
         }
 
@@ -165,7 +167,7 @@ public class Dice implements ServerCommand {
         }
 
         LoadDriver ld = new LoadDriver();
-        ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID), SQLUtil.DELETEREQUESTTYPE);
+        ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID));
         ld.close();
     }
 

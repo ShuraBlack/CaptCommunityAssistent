@@ -1,7 +1,8 @@
 package listener;
 
 import model.sql.LoadDriver;
-import model.sql.SQLUtil;
+import model.util.ChannelUtil;
+import model.util.SQLUtil;
 import com.mysql.cj.log.Slf4JLogger;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.VoiceChannel;
@@ -25,8 +26,12 @@ public class VoiceChannelListener extends ListenerAdapter {
         if (event.getMember().getUser().isBot()) {
             return;
         }
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
+
         String channelid = event.getChannelJoined().getId();
-        if (channelid.equals("286629767346782208")) {
+        if (channelid.equals(ChannelUtil.TVOICE)) {
             LoadDriver ld = new LoadDriver();
             List<Permission> allow = new LinkedList<>();
             allow.add(Permission.MANAGE_CHANNEL);
@@ -44,7 +49,7 @@ public class VoiceChannelListener extends ListenerAdapter {
             assert vc != null;
             event.getMember().getGuild()
                     .moveVoiceMember(event.getMember(),vc).queue();
-            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newechannelid, event.getMember().getId()), SQLUtil.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newechannelid, event.getMember().getId()));
             ld.close();
         }
     }
@@ -54,10 +59,14 @@ public class VoiceChannelListener extends ListenerAdapter {
         if (event.getMember().getUser().isBot()) {
             return;
         }
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
+
         if (event.getChannelLeft().getMembers().isEmpty()) {
             LoadDriver ld = new LoadDriver();
             String channelid = event.getChannelLeft().getId();
-            ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid), SQLUtil.SELECTREQUESTTYPE);
+            ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid));
             try {
                 if (rs.next()) {
                     if (!event.getChannelLeft().getMembers().isEmpty()) {
@@ -65,7 +74,7 @@ public class VoiceChannelListener extends ListenerAdapter {
                     }
                     removed.add(event.getChannelLeft().getId());
                     event.getChannelLeft().delete().queue();
-                    ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid), SQLUtil.DELETEREQUESTTYPE);
+                    ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid));
                 }
                 ld.close();
             } catch (SQLException throwables) {
@@ -80,10 +89,13 @@ public class VoiceChannelListener extends ListenerAdapter {
         if (event.getMember().getUser().isBot()) {
             return;
         }
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
 
         LoadDriver ld = new LoadDriver();
         String channelid = event.getChannelJoined().getId();
-        if (channelid.equals("286629767346782208")) {
+        if (channelid.equals(ChannelUtil.TVOICE)) {
             List<Permission> allow = new LinkedList<>();
             allow.add(Permission.MANAGE_CHANNEL);
             allow.add(Permission.KICK_MEMBERS);
@@ -100,10 +112,10 @@ public class VoiceChannelListener extends ListenerAdapter {
             assert vc != null;
             event.getMember().getGuild()
                     .moveVoiceMember(event.getMember(),vc).queue();
-            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newchannelid, event.getMember().getId()), SQLUtil.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTTMPCHANNEL(newchannelid, event.getMember().getId()));
         }
 
-        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(event.getChannelLeft().getId()), SQLUtil.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(event.getChannelLeft().getId()));
         String channelidleft = event.getChannelLeft().getId();
         try {
             if (rs.next()) {
@@ -112,7 +124,7 @@ public class VoiceChannelListener extends ListenerAdapter {
                 }
                 removed.add(event.getChannelLeft().getId());
                 event.getChannelLeft().delete().queue();
-                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelidleft), SQLUtil.DELETEREQUESTTYPE);
+                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelidleft));
             }
         } catch (SQLException throwables) {
             Slf4JLogger logger = new Slf4JLogger("VoiceChannelListener.Move.Left");
@@ -126,12 +138,16 @@ public class VoiceChannelListener extends ListenerAdapter {
         if (removed.remove(event.getChannel().getId())) {
             return;
         }
+        if (!event.getGuild().getId().equals("286628427140825088")) {
+            return;
+        }
+
         LoadDriver ld = new LoadDriver();
         String channelid = event.getChannel().getId();
-        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid), SQLUtil.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTTMPCHANNELS(channelid));
         try {
             if (rs.next()) {
-                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid), SQLUtil.DELETEREQUESTTYPE);
+                ld.executeSQL(SQLUtil.DELETETMPCHANNEL(channelid));
             }
         } catch (SQLException throwables) {
             Slf4JLogger logger = new Slf4JLogger("VoiceChannelListener.Delete");
@@ -139,4 +155,5 @@ public class VoiceChannelListener extends ListenerAdapter {
         }
         ld.close();
     }
+
 }

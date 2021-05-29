@@ -16,10 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CommandManager {
 
     public ConcurrentHashMap<String, ServerCommand> commands;
+    public ConcurrentHashMap<String, ServerCommand> deactivated;
 
     public CommandManager() {
         // Create a HashMap
         this.commands = new ConcurrentHashMap<>();
+        this.deactivated = new ConcurrentHashMap<>();
 
         // Adds all Commands
 
@@ -32,8 +34,6 @@ public class CommandManager {
         this.commands.put("!help", new Help());
         // Version of the Bot
         this.commands.put("!version", new Version());
-        // Load all Member into MySQL DB
-        this.commands.put("!loadmember", new Loadmember());
         /*------------------------------------------------------------------------------------------------------------*/
 
         /*-- Randomizer ----------------------------------------------------------------------------------------------*/
@@ -58,6 +58,8 @@ public class CommandManager {
         this.commands.put("!promo", new Promo());
         // Create a message if you search user for a game
         this.commands.put("!search", new Search());
+        // Guide for Warframe
+        this.commands.put("!guide", new Guide());
         /*------------------------------------------------------------------------------------------------------------*/
 
         /*-- Fun -----------------------------------------------------------------------------------------------------*/
@@ -67,6 +69,14 @@ public class CommandManager {
         this.commands.put("!idle", new Idle());
         // RGB Owner Role
         this.commands.put("!rainbow", new Rainbow());
+        // Blackjack
+        this.commands.put("!blackjack", new Blackjack());
+        // SlotMachine
+        this.commands.put("!sm", new SlotMashine());
+        // Player Roulette
+        this.commands.put("!pr", new PlayerRoulette());
+        // Balance-check
+        this.commands.put("!balance", new Balance());
         /*------------------------------------------------------------------------------------------------------------*/
 
         /*-- Music ---------------------------------------------------------------------------------------------------*/

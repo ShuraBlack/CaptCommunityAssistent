@@ -4,18 +4,23 @@ import com.mysql.cj.log.Slf4JLogger;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import commands.types.ServerCommand;
 import listener.*;
+import model.web.Server;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.*;
-import java.util.Objects;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Main Class for the Discord Bot
@@ -68,7 +73,9 @@ public class DiscordBot {
         try {
 
             Manager = JDABuilder.createDefault(PROPERTIES.getProperty("token"))
-                    .enableIntents(GatewayIntent.GUILD_MEMBERS)
+                    .enableIntents(GatewayIntent.GUILD_MEMBERS, GatewayIntent.GUILD_VOICE_STATES)
+                    .disableIntents(getDisabledIntents())
+                    .disableCache(getDisabledCacheFlags())
                     .setMemberCachePolicy(MemberCachePolicy.ALL)
                     .addEventListeners(new ReactionListener())
                     .addEventListeners(new CommandListener())
@@ -117,23 +124,85 @@ public class DiscordBot {
     /**
      * shutdown controll
      */
-    private void shutdown () {
+    public void shutdown () {
         new Thread(() -> {
 
             String line = "";
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             try {
+                System.out.println("\n====================================================\n" +
+                        "Commands:\n" +
+                        "modules -> shows all activ and available modules\n" +
+                        "remove <modulename> -> deactivated module\n" +
+                        "add <modulename> -> activate module\n" +
+                        "exit -> turn off the bot" +
+                        "\n====================================================\n");
                 while ((line = reader.readLine()) != null) {
                     if(line.equalsIgnoreCase("exit")) {
-                        if(Manager != null) {
+                        if (Manager != null) {
                             reader.close();
-                            Objects.requireNonNull(Manager.getShardManager()).setStatus(OnlineStatus.OFFLINE);
+                            Manager.getPresence().setStatus(OnlineStatus.OFFLINE);
                             Manager.shutdown();
-                            System.out.println("------------------------------------------\n" +
+                            System.out.println("==========================================\n" +
                                     "Successfuly went offline\n" +
-                                    "------------------------------------------");
+                                    "==========================================");
                         }
                         reader.close();
+                        System.exit(1);
+                    } else if (line.equalsIgnoreCase("modules")) {
+                        System.out.println("==========================================\n" +
+                                "Modules: \n" +
+                                "==========================================");
+                        System.out.println("\nActiv:");
+                        if (getCManager().commands.size() > 0) {
+                            List<String> activ = getCManager().commands.keySet()
+                                    .stream().sorted().collect(Collectors.toList());
+                            for (String name : activ) {
+                                System.out.println(name);
+                            }
+                        } else {
+                            System.out.println("Empty");
+                        }
+
+                        System.out.println("\nAvailable:");
+                        if (getCManager().deactivated.size() > 0) {
+                            List<String> available = getCManager().deactivated.keySet()
+                                    .stream().sorted().collect(Collectors.toList());
+                            for (String name : available) {
+                                System.out.println(name);
+                            }
+                        } else {
+                            System.out.println("Empty");
+                        }
+                        System.out.println("==========================================");
+                    } else if (line.startsWith("remove ")) {
+                        String[] args = line.split(" ");
+                        if (getCManager().commands.containsKey(args[1])) {
+                            ServerCommand tmp = getCManager().commands.get(args[1]);
+                            getCManager().deactivated.put(args[1], tmp);
+                            getCManager().commands.remove(args[1]);
+                            System.out.println("==========================================\n" +
+                                    "Deactivated Module > " + args[1] + "\n" +
+                                    "==========================================");
+                        } else {
+                            System.out.println("==========================================\n" +
+                                    "No active Module with > " + args[1] + "\n" +
+                                    "==========================================");
+                        }
+                    } else if (line.startsWith("add ")) {
+                        String[] args = line.split(" ");
+                        if (getCManager().deactivated.containsKey(args[1])) {
+                            ServerCommand tmp = getCManager().deactivated.get(args[1]);
+                            getCManager().commands.put(args[1], tmp);
+                            getCManager().deactivated.remove(args[1]);
+                            System.out.println("==========================================\n" +
+                                    "Deactivated Module > " + args[1] + "\n" +
+                                    "==========================================");
+                        } else {
+                            System.out.println("==========================================\n" +
+                                    "The Module > " + args[1] + " might be already activ or doesnt exist\n" +
+                                    "==========================================");
+                        }
                     } else {
                         System.out.println("Use `exit` to shutdown.");
                     }
@@ -153,22 +222,21 @@ public class DiscordBot {
             inputStream = new FileInputStream(config);
         } catch (FileNotFoundException e) {
             logger.logError("Could not find the config.properties file\n" +
-                    "Specify a file with token->DiscordBot | url,username,password->MySQL Database",e);
+                    "Specify a file with token->DiscordBot | url,username,password->MySQL Database");
+            System.exit(1);
         }
-        if (inputStream != null) {
-            try {
-                prop.load(inputStream);
-                logger.logInfo("Load config.properties");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+       try {
+           prop.load(inputStream);
+           logger.logInfo("Load config.properties");
+       } catch (IOException e) {
+           e.printStackTrace();
+       }
         if (!prop.containsKey("token") ||
                 !prop.containsKey("url") ||
                 !prop.containsKey("username") ||
                 !prop.containsKey("password")) {
             logger.logError("The config.properties file misses one of the following keys -> token,url,username,password");
-            System.exit(0);
+            System.exit(1);
         }
         return prop;
     }
@@ -190,4 +258,20 @@ public class DiscordBot {
                 .setSendingHandler(musicManager.getSendHandler());
         return this.musicManager;
     }
+
+    private List<GatewayIntent> getDisabledIntents () {
+        List<GatewayIntent> list = new LinkedList<>();
+        list.add(GatewayIntent.DIRECT_MESSAGE_REACTIONS);
+        list.add(GatewayIntent.DIRECT_MESSAGE_TYPING);
+        list.add(GatewayIntent.GUILD_PRESENCES);
+        return list;
+    }
+
+    private List<CacheFlag> getDisabledCacheFlags () {
+        List<CacheFlag> list = new LinkedList<>();
+        list.add(CacheFlag.ACTIVITY);
+        list.add(CacheFlag.CLIENT_STATUS);
+        return list;
+    }
+
 }

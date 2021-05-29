@@ -18,6 +18,13 @@ public class War {
         setDuration();
     }
 
+    public War(String eventname, int strength, int enemystrength, int duration) {
+        this.eventname = eventname;
+        this.strength = strength;
+        this.enemystrength = enemystrength;
+        this.duration = duration;
+    }
+
     public String getEventname() {
         return eventname;
     }

@@ -80,10 +80,12 @@ public class Help implements ServerCommand {
                 "```\n" +
                 "**!playlist show [playlistname]**```cs\n" +
                 "Zeigt alle Lieder aus [\"playlistname\"]\n" +
-                "```",false);
+                "```\n" +
+                "**!playlist list**```cs\n" +
+                "Zeigt all deine Playlists\n```",false);
         eb.addField("__Temporäre VoiceChannel:__","Wenn du```cs\n" +
                 "\"Create T:Voice\" beitritts, wird automatisch ein neuer VoiceChannel erstellt," +
-                " mit der gleichen Maximalanzahl",false);
+                " mit der gleichen Maximalanzahl und zusätzlichen Rechten für den Ersteller\n```",false);
         return eb;
     }
 }

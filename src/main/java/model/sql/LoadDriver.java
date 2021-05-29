@@ -8,6 +8,8 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Class for starting a Connection to the Pebblehost Database
@@ -45,52 +47,146 @@ public class LoadDriver {
             String URL = DiscordBot.PROPERTIES.getProperty("url");
             String username = DiscordBot.PROPERTIES.getProperty("username");
             String password = DiscordBot.PROPERTIES.getProperty("password");
-            conn = DriverManager.getConnection(URL,username,password);
             logger = new Slf4JLogger("SQL.Managment");
-            logger.logInfo("Opens Connection to mySQL Database");
+            conn = DriverManager.getConnection(URL,username,password);
             stmt = conn.createStatement();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.logError("Couldnt etablish connection to MySQL database", e);
         }
     }
 
     /**
      * Execution for the SQL Query Statments (no Prepared Statments)
      * @param command is your SQL Statment
-     * @param type is the typ of the Statment (SELECT,INSERT,etc.). You can use the SQLUtil Variables for more clean code
      * @return the Resultset of your Query Statment
      * @apiNote uses the SQL Connection/J API - https://www.mysql.com/de/products/connector/
      * @since 10.03.2021
      */
-    public ResultSet executeSQL (String command, byte type) {
+    public ResultSet executeSQL (String command) {
 
         try {
-            if (type == 0) {
-                stmt.executeUpdate(command);
-                logger.logInfo("INSERT Request granted");
 
-            } else if (type == 1) {
+            if (command.startsWith("INSERT")
+                    || command.startsWith("DELETE")
+                    || command.startsWith("UPDATE")) {
+                stmt.executeUpdate(command);
+
+            } else if (command.startsWith("SELECT")) {
+
                 rs = stmt.executeQuery(command);
-                logger.logInfo("SELECT Request granted");
 
-            } else if (type == 2) {
-                stmt.executeUpdate(command);
-                logger.logInfo("DELETE Request granted");
-
-            } else if (type == 3) {
-                stmt.executeUpdate(command);
-                logger.logInfo("UPDATE Request granted");
             }
 
         } catch (SQLException ex){
             logger.logError("Request got denied" +
                     "\nRequest: " + command +
-                    "\nType: " + type +
                     "\nSQLException: " + ex.getMessage() +
                     "\nSQLState: " + ex.getSQLState() +
                     "\nVendorError: " + ex.getErrorCode(),ex);
         }
         return rs;
+    }
+
+    public LoadDriver executeSQLModelable (String command) {
+
+        try {
+            if (command.startsWith("INSERT")
+                    || command.startsWith("UPDATE")
+                    || command.startsWith("DELETE")) {
+
+                stmt.executeUpdate(command);
+
+            } else if (command.startsWith("SELECT")) {
+
+                rs = stmt.executeQuery(command);
+
+            }
+
+        } catch (SQLException ex){
+            logger.logError("Request got denied" +
+                    "\nRequest: " + command +
+                    "\nSQLException: " + ex.getMessage() +
+                    "\nSQLState: " + ex.getSQLState() +
+                    "\nVendorError: " + ex.getErrorCode(),ex);
+        }
+        return this;
+    }
+
+    public List<IdleGameSaveModel> getIdlegameSaveModels () {
+        List<IdleGameSaveModel> list = new LinkedList<>();
+        try {
+            while (rs.next()) {
+                IdleGameSaveModel igsm = new IdleGameSaveModel(
+                        rs.getString(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getLong(4),
+                        rs.getInt(5)
+                );
+                list.add(igsm);
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<PlaylistModel> getPlaylistModels () {
+        List<PlaylistModel> list = new LinkedList<>();
+        try {
+            while (rs.next()) {
+                PlaylistModel plm = new PlaylistModel(
+                        rs.getInt(1),
+                        rs.getString(2),
+                        rs.getString(3),
+                        rs.getString(4)
+                );
+                list.add(plm);
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<PromoModel> getPromoModels () {
+        List<PromoModel> list = new LinkedList<>();
+        try {
+            while (rs.next()) {
+                PromoModel pm = new PromoModel(
+                        rs.getInt(1),
+                        rs.getInt(2),
+                        rs.getString(3),
+                        rs.getString(4),
+                        rs.getString(5),
+                        rs.getString(6)
+                );
+                list.add(pm);
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<TempChannelModel> getTempChannelModels () {
+        List<TempChannelModel> list = new LinkedList<>();
+        try {
+            while (rs.next()) {
+                TempChannelModel tcm = new TempChannelModel(
+                        rs.getString(1),
+                        rs.getString(2)
+                );
+                list.add(tcm);
+            }
+            rs.close();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
+        return list;
     }
 
     /**
@@ -120,7 +216,6 @@ public class LoadDriver {
         if (conn != null) {
             try {
                 conn.close();
-                logger.logInfo("Close Connection to mySQL Database");
             } catch (SQLException sqlEx) {
             } // ignore
 

@@ -1,6 +1,7 @@
 package commands;
 
 import commands.types.ServerCommand;
+import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -22,7 +23,7 @@ public class Rules implements ServerCommand {
             return;
         }
 
-        if (!channel.getId().equals("799449909090713631")) {
+        if (!channel.getId().equals(ChannelUtil.GUIDELINES)) {
             return;
         }
         String[] args = message.getContentDisplay().split(" ");

@@ -24,10 +24,12 @@ public class Version implements ServerCommand {
             }
             EmbedBuilder eb = new EmbedBuilder()
                 .setColor(Color.WHITE)
-                .setThumbnail("https://s16.directupload.net/images/210310/temp/od2evm2e.png")
+                .setThumbnail(DiscordBot.INSTANCE.Manager.getSelfUser().getAvatarUrl())
                 .setTitle("CaptCommunity Assisstent")
-                .setDescription("**Version** " + version + "\n- Better user experience for MusicPlayer\n" +
-                        "- Playlist integration for MusicPlayer")
+                .setDescription("**Version** " + version + "\n- Add SlotMachine game\n" +
+                        "- Add Balance check function\n" +
+                        "- Blackjack Free-Mode/Bet-Mode\n" +
+                        "- Casino role and Category")
                 .setFooter("Made by Shurablack (You can appreciate my work through an donation if you want)");
 
             channel.sendMessage(eb.build()).complete().delete().queueAfter(10, TimeUnit.SECONDS);

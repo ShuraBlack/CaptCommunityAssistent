@@ -14,6 +14,12 @@ public class Peace {
         setDuration();
     }
 
+    public Peace(String eventname, double bonusvalue, int duration) {
+        this.eventname = eventname;
+        this.bonusvalue = bonusvalue;
+        this.duration = duration;
+    }
+
     public String getEventname() {
         return eventname;
     }

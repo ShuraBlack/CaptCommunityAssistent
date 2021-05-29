@@ -1,7 +1,7 @@
 package commands;
 
 import model.sql.LoadDriver;
-import model.sql.SQLUtil;
+import model.util.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
@@ -33,7 +33,7 @@ public class Clear implements ServerCommand {
         }
 
         LoadDriver ld = new LoadDriver();
-        ResultSet rs = ld.executeSQL(SQLUtil.SELECTMESSAGESIDS(), SQLUtil.SELECTREQUESTTYPE);
+        ResultSet rs = ld.executeSQL(SQLUtil.SELECTMESSAGESIDS());
         try {
             while (rs.next()) {
                 activmessages.add(rs.getString(1));
@@ -47,7 +47,14 @@ public class Clear implements ServerCommand {
                 channel.purgeMessages(get(channel));
                 channel.sendMessage("Alle verfügbaren Nachrichten wurden gelöscht!")
                         .complete().delete().queueAfter(3, TimeUnit.SECONDS);
-            } catch (IllegalArgumentException ignored) { }
+            } catch (IllegalArgumentException ignored) {
+            }
+        } else if (args.length == 2 && args[1].equals("reset")) {
+            if (!m.getId().equals("286628057551208450")) {
+                return;
+            }
+            channel.createCopy().setPosition(channel.getPosition()).queue();
+            channel.delete().queue();
         } else if (args.length == 2) {
             try {
                 int amount = Integer.parseInt(args[1]);

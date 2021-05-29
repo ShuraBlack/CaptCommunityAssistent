@@ -1,13 +1,6 @@
-package model.sql;
+package model.util;
 
 public class SQLUtil {
-
-    /*-- Request types -----------------------------------------------------------------------------------------------*/
-    public final static byte INSERTREQUESTTYPE = 0;
-    public final static byte SELECTREQUESTTYPE = 1;
-    public final static byte DELETEREQUESTTYPE = 2;
-    public final static byte UPDATEREQUESTTYPE = 3;
-    /*----------------------------------------------------------------------------------------------------------------*/
 
     /*-- Prepared Statments PLAYLISTS --------------------------------------------------------------------------------*/
 
@@ -20,7 +13,7 @@ public class SQLUtil {
     }
 
     public static String SELECTALLSONGS (String userid) {
-        return "SELECT song,id FROM playlist p WHERE p.userid = '" + userid + "';";
+        return "SELECT * FROM playlist p WHERE p.userid = '" + userid + "';";
     }
 
     public static String SELECTSONGSOFPLAYLIST (String userid, String playlist) {
@@ -69,15 +62,32 @@ public class SQLUtil {
     /*-- Prepared Statments IDLEGAME ---------------------------------------------------------------------------------*/
 
     public static String SELECTSAVEGAME (String userid) {
-        return "SELECT code FROM idlegamesave WHERE userid = '" + userid + "';";
+        return "SELECT * FROM idlegamesave WHERE userid = '" + userid + "';";
     }
 
-    public static String UPDATESAVEGAME (String userid, String code) {
-        return "UPDATE idlegamesave SET code = '" + code + "' WHERE userid = '" + userid + "';" ;
+    public static String UPDATESAVEGAME (String userid, String code, String event, long gem, int prestige) {
+        return "UPDATE idlegamesave SET code = '" + code + "', event = '"
+                + event + "', gem = " + gem + ", prestige = " + prestige + " WHERE userid = '" + userid + "';" ;
     }
 
-    public static String INSERTSAVEGAME (String userid, String code) {
-        return "INSERT INTO idlegamesave VALUE ('" + userid + "','" + code + "');";
+    public static String INSERTSAVEGAME (String userid, String code, String event, long gem, int prestige) {
+        return "INSERT INTO idlegamesave VALUE ('" + userid + "','" + code + "','" + event + "'," + gem + "," + prestige + ");";
+    }
+
+    public static String DELETESAVEGAME (String userid) {
+        return "DELETET FROM idlegamesave WHERE userid = '" + userid + "';";
+    }
+
+    /*----------------------------------------------------------------------------------------------------------------*/
+
+    /*-- Prepared Statments CASINO ---------------------------------------------------------------------------------*/
+
+    public static String SELECTGEMSOFMEMBER (String userid) {
+        return "SELECT gem FROM idlegamesave WHERE userid = '" + userid + "';";
+    }
+
+    public static String UPDATEGEMSOFMEMBER (String userid, long gems) {
+        return "UPDATE idlegamesave SET gem = " + gems + " WHERE userid = '" + userid + "';";
     }
 
     /*----------------------------------------------------------------------------------------------------------------*/

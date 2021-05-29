@@ -1,6 +1,7 @@
 package commands;
 
 import commands.types.ServerCommand;
+import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -17,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Search implements ServerCommand {
 
-    private List<String> open = new ArrayList<>();
+    private final List<String> open = new ArrayList<>();
 
     @Override
     public void performCommand(Member m, TextChannel channel, Message message) {
@@ -25,7 +26,7 @@ public class Search implements ServerCommand {
         String[] args = message.getContentDisplay().split(" ");
         message.delete().queue();
 
-        if (!channel.getId().equals("815347121854480484")) {
+        if (!channel.getId().equals(ChannelUtil.SEARCH)) {
             return;
         }
         if (open.contains(m.getId())) {
@@ -60,7 +61,7 @@ public class Search implements ServerCommand {
 
             }
 
-            channel.getGuild().getTextChannelById("815347121854480484").sendMessage(eb.build()).queue(mes -> {
+            channel.sendMessage(eb.build()).queue(mes -> {
                 open.add(m.getId());
                 mes.delete().queueAfter(5, TimeUnit.MINUTES, d -> open.remove(m.getId()));
             });

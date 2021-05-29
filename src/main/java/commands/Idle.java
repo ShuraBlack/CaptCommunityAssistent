@@ -2,9 +2,10 @@ package commands;
 
 import model.idle.Peace;
 import model.idle.War;
+import model.sql.IdleGameSaveModel;
 import model.sql.LoadDriver;
-import model.sql.SQLUtil;
-import com.mysql.cj.log.Slf4JLogger;
+import model.util.ChannelUtil;
+import model.util.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -12,13 +13,13 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import static model.util.SQLUtil.*;
 
 public class Idle implements ServerCommand {
 
@@ -36,7 +37,7 @@ public class Idle implements ServerCommand {
 
         message.delete().queue();
 
-        if (!channel.getId().equals("804762124349997078")) {
+        if (!channel.getId().equals(ChannelUtil.IDLEGAME)) {
             EmbedBuilder eb = new EmbedBuilder()
                     .setColor(Color.WHITE)
                     .setDescription("Starte das Idlegame im " + channel.getGuild().getTextChannelById("804762124349997078").getAsMention() + " TextChannel");
@@ -52,27 +53,24 @@ public class Idle implements ServerCommand {
             activ = true;
             instance = new IdleGame(m.getEffectiveName(), m.getId(), channel);
 
-            ResultSet existsload = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
-            try {
-                if (existsload.next()) {
-                    ResultSet rs = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
-                    rs.next();
-                    loadcode(rs.getString(1));
-                }
-            } catch (SQLException throwables) {
-                Slf4JLogger logger = new Slf4JLogger("Idlegame.load");
-                logger.logError("Couldnt load the save codes",throwables);
+            List<IdleGameSaveModel> idleGameSaveModels = ld.executeSQLModelable(SELECTSAVEGAME(m.getId()))
+                    .getIdlegameSaveModels();
+            if (!idleGameSaveModels.isEmpty()) {
+                IdleGameSaveModel save = idleGameSaveModels.get(0);
+                loadcode(save.getCode());
+                instance.value = save.getGem();
+                instance.prestige = save.getPrestige();
+                mapEventToObject(save.getEvent());
             }
 
             EmbedBuilder eb = createMessage();
             mesID = channel.sendMessage(eb.build()).complete().getId();
 
-
-            ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(mesID,"!idle"), SQLUtil.INSERTREQUESTTYPE);
+            ld.executeSQL(SQLUtil.INSERTCOMMANDMESSAGE(mesID,"!idle"));
 
             ld.close();
 
-            String[] reactionname = {"⚔","\uD83C\uDFF9","\uD83D\uDEE1","⚖","\uD83D\uDECC","\uD83D\uDCBF","\uD83D\uDCC0","\uD83D\uDCE4"};
+            String[] reactionname = {"⚔","\uD83C\uDFF9","\uD83D\uDEE1","⚖","\uD83D\uDECC","\uD83D\uDCBF","\uD83D\uDCC0","\uD83C\uDFF0","\uD83D\uDCE4"};
             for (String s : reactionname) {
                 channel.editMessageById(mesID,eb.build()).complete().addReaction(s).queue();
             }
@@ -81,6 +79,24 @@ public class Idle implements ServerCommand {
                 return;
             }
             helper(channel);
+        } else if (args.length == 2 && args[1].equals("reset") && instance == null) {
+            LoadDriver ld = new LoadDriver();
+
+            List<IdleGameSaveModel> idleGameSaveModels = ld.executeSQLModelable(SELECTSAVEGAME(m.getId()))
+                    .getIdlegameSaveModels();
+            if (!idleGameSaveModels.isEmpty()) {
+                ld.executeSQL(DELETESAVEGAME(m.getId()));
+                EmbedBuilder eb = new EmbedBuilder()
+                        .setColor(Color.GREEN)
+                        .setDescription(m.getAsMention() + ", dein Spielstand wurde gelöscht");
+                channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
+            } else {
+                EmbedBuilder eb = new EmbedBuilder()
+                        .setColor(Color.RED)
+                        .setDescription(m.getAsMention() + ", du besitzt noch keinen Spielstand");
+                channel.sendMessage(eb.build()).complete().delete().queueAfter(7, TimeUnit.SECONDS);
+            }
+            ld.close();
         }
     }
 
@@ -90,7 +106,6 @@ public class Idle implements ServerCommand {
         if (!m.getId().equals(instance.userID)) {
             return;
         }
-
         switch (emote) {
             case "⚔":
                 if (instance.value < instance.costupgrade1) {
@@ -99,8 +114,8 @@ public class Idle implements ServerCommand {
                 instance.upgrade1level++;
                 instance.value -= instance.costupgrade1;
                 instance.multiplier += instance.upgrade1amount;
-                instance.upgrade1amount += 0.2;
-                instance.costupgrade1 *= 1.8;
+                instance.upgrade1amount = round(instance.upgrade1amount + 0.4);
+                instance.costupgrade1 *= 1.6;
                 break;
             case "\uD83C\uDFF9":
                 if (instance.value < instance.costupgrade2) {
@@ -109,8 +124,8 @@ public class Idle implements ServerCommand {
                 instance.upgrade2level++;
                 instance.value -= instance.costupgrade2;
                 instance.multiplier += instance.upgrade2amount;
-                instance.upgrade2amount += 0.5;
-                instance.costupgrade2 *= 1.8;
+                instance.upgrade2amount += 1.0;
+                instance.costupgrade2 *= 1.6;
                 break;
             case "\uD83D\uDEE1":
                 if (instance.value < instance.costupgrade3) {
@@ -120,7 +135,7 @@ public class Idle implements ServerCommand {
                 instance.value -= instance.costupgrade3;
                 instance.multiplier += instance.upgrade3amount;
                 instance.upgrade3amount += 2.0;
-                instance.costupgrade3 *= 1.8;
+                instance.costupgrade3 *= 1.6;
                 break;
             case "⚖":
                 if (instance.value < instance.costupgrade4) {
@@ -137,7 +152,7 @@ public class Idle implements ServerCommand {
                     break;
                 }
                 if (instance.upgradecritchance == 24) {
-                    break;
+                    return;
                 }
                 instance.upgradecritchance++;
                 instance.value -= instance.costcritchance;
@@ -162,28 +177,39 @@ public class Idle implements ServerCommand {
                 instance.villager++;
                 instance.costvillager *= 2.5;
                 break;
+            case "\uD83C\uDFF0": // Prestige
+                int prestige = instance.prestige + calculatePrestige();
+                instance.timer.cancel();
+                instance = new IdleGame(m.getEffectiveName(), m.getId(), channel);
+                war = null;
+                peace = null;
+                time = 0;
+                instance.prestige = prestige;
+                break;
             case "\uD83D\uDCE4": // Save
                 LoadDriver ld = new LoadDriver();
-                ResultSet exists = ld.executeSQL(SQLUtil.SELECTSAVEGAME(m.getId()), SQLUtil.SELECTREQUESTTYPE);
-                try {
-                    if (!exists.next()) {
-                        ld.executeSQL(SQLUtil.INSERTSAVEGAME(m.getId(),SQLsavecode()), SQLUtil.INSERTREQUESTTYPE);
-                    } else {
-                        ld.executeSQL(SQLUtil.UPDATESAVEGAME(m.getId(),SQLsavecode()), SQLUtil.UPDATEREQUESTTYPE);
-                    }
-                    ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID), SQLUtil.DELETEREQUESTTYPE);
-                    channel.deleteMessageById(mesID).queue();
-                } catch (SQLException throwables) {
-                    Slf4JLogger logger = new Slf4JLogger("Idlegame.save");
-                    logger.logError("Couldnt save the user code or delete the instance message",throwables);
+
+                List<IdleGameSaveModel> idleGameSaveModels = ld.executeSQLModelable(SELECTSAVEGAME(m.getId()))
+                        .getIdlegameSaveModels();
+
+                String eventSave = null;
+                if (war != null | peace != null) {
+                    eventSave = mapEventToCode();
                 }
+
+                if (idleGameSaveModels.isEmpty()) {
+                    ld.executeSQL(INSERTSAVEGAME(m.getId(),SQLsavecode(), eventSave, instance.value, instance.prestige));
+                } else {
+                    ld.executeSQL(UPDATESAVEGAME(m.getId(),SQLsavecode() , eventSave, instance.value, instance.prestige));
+                }
+                ld.executeSQL(SQLUtil.DELETECOMMANDMESSAGE(mesID));
+
                 EmbedBuilder eb = new EmbedBuilder()
                         .setColor(Color.WHITE)
-                        .setDescription("Dein Spiel würde gespeichert!")
+                        .setDescription("Dein Spiel wurde gespeichert!")
                         .setFooter(m.getUser().getAsTag() + " : " + m.getId());
                 channel.sendMessage(eb.build()).complete().delete().queueAfter(5, TimeUnit.SECONDS);
                 activ = false;
-                instance = null;
                 ld.close();
                 break;
         }
@@ -193,7 +219,7 @@ public class Idle implements ServerCommand {
     @Override
     public void privateperform(String command, User u) { throw new UnsupportedOperationException(); }
 
-    public class IdleGame {
+    private class IdleGame {
 
         private final String userID;
         private final String username;
@@ -202,6 +228,7 @@ public class Idle implements ServerCommand {
         final int period = 5000; // repeat every 5 sec.
 
         private long value = 0;
+        private int prestige = 0;
         private int villager = 1;
         private double multiplier = 1.0;
         private double critdamage = 105;
@@ -235,6 +262,8 @@ public class Idle implements ServerCommand {
         private final int upgradecritdamageamount = 10;
         private int upgradecritdamage = 1;
 
+        private Timer timer;
+
         public IdleGame (String username, String ID, TextChannel channel) {
             this.userID = ID;
             this.username = username;
@@ -242,18 +271,19 @@ public class Idle implements ServerCommand {
         }
 
         public void count (TextChannel channel) {
-            Timer timer = new Timer();
+            timer = new Timer();
             Random rdm = new Random();
             timer.scheduleAtFixedRate(new TimerTask() {
                 public void run() {
-                    if (!activ) {
-                        this.cancel();
-                    }
                     double bonus = 1;
+                    int prestige = 1;
+                    if (instance.prestige > 0) {
+                        prestige = instance.prestige;
+                    }
                     if (peace != null) {
                         bonus = peace.getBonusvalue();
                     }
-                    int valueplus = (int) ((villager * multiplier) * 5 * bonus);
+                    int valueplus = (int) ((villager * multiplier) * 5 * bonus * prestige);
                     if (rdm.nextInt(100) < instance.critchance) {
                         value += valueplus * (instance.critdamage / 100);
                     } else {
@@ -309,7 +339,13 @@ public class Idle implements ServerCommand {
                             time = 0;
                         }
                     }
-                    if (activ) {
+                    if (!activ) {
+                        this.cancel();
+                        instance = null;
+                        war = null;
+                        peace = null;
+                        channel.deleteMessageById(mesID).queue();
+                    } else {
                         channel.editMessageById(mesID, eb.build()).queue();
                     }
                 }
@@ -319,14 +355,15 @@ public class Idle implements ServerCommand {
     }
 
     public EmbedBuilder createMessage () {
-        NumberFormat numFormat;
-        if (instance.value > 1000000 || instance.value < -1000000) {
-            numFormat = new DecimalFormat("000000E0");
-        } else {
-            numFormat = new DecimalFormat();
-        }
-        String[] reactionname = {"⚔","\uD83C\uDFF9","\uD83D\uDEE1","⚖","\uD83D\uDECC","\uD83D\uDCBF","\uD83D\uDCC0","\uD83D\uDCE4"};
+        NumberFormat numFormat = new DecimalFormat();
+
+        String[] reactionname = {"⚔","\uD83C\uDFF9","\uD83D\uDEE1","⚖","\uD83D\uDECC","\uD83D\uDCBF","\uD83D\uDCC0","\uD83D\uDCE4","\uD83C\uDFF0"};
         EmbedBuilder eb = new EmbedBuilder();
+
+        String crit = "**Stufe:**  MAX";
+        if (instance.upgradecritchance < 24) {
+            crit = "**Stufe:** " + instance.upgradecritchance + " - **Kosten:** " + numFormat.format(instance.costcritchance) + " - **Steigerung:** " + instance.upgradecritchanceamount + "%";
+        }
 
         eb.setColor(Color.BLACK);
         eb.setTitle("Discord Idler CaptCom (EXPERIMENTAL)");
@@ -334,7 +371,7 @@ public class Idle implements ServerCommand {
                 "nun verantwortlich dafür das dein Reich in Wohlstand erblüht. Treffe sinnvolle Entscheidungen um an Reichtum zu kommen. " +
                 "Ob mit Krieg oder Diplomatie\n");
 
-        eb.addField("\uD83D\uDC8E " + numFormat.format(instance.value),"**Bevölkerung:** " + instance.villager + "mio.\n" + "**Multiplikator:** " + instance.multiplier + "x\n" +
+        eb.addField("\uD83D\uDC8E " + numFormat.format(instance.value),"\uD83C\uDFF0 **Prestige:** " + instance.prestige + " (" + calculatePrestige() + ")" + "\n**Bevölkerung:** " + instance.villager + "mio.\n" + "**Multiplikator:** " + instance.multiplier + "x\n" +
                 "**Kritische Chance:** " + instance.critchance + "%\n" + "**Kritischer Schaden:** " + instance.critdamage + "%",false);
         eb.addField("","",false);
         eb.addField(reactionname[0] + " Schwerter schärfen","**Stufe:** " + instance.upgrade1level + " - **Kosten:** " + numFormat.format(instance.costupgrade1) + " - **Steigerung:** " + instance.upgrade1amount + "x",false);
@@ -342,10 +379,11 @@ public class Idle implements ServerCommand {
         eb.addField(reactionname[2] + " Schilder härten","**Stufe:** " + instance.upgrade3level + " - **Kosten:** " + numFormat.format(instance.costupgrade3) + " - **Steigerung:** " + instance.upgrade3amount + "x",false);
         eb.addField(reactionname[3] + " Diplomatie anwenden","**Stufe:** " + instance.upgrade4level + " - **Kosten:** " + numFormat.format(instance.costupgrade4) + " - **Steigerung:** " + instance.upgrade4amount + "x",false);
         eb.addField(reactionname[4] + " Häuser bauen","**Stufe:** " + instance.upgradevillager + " - **Kosten:** " + numFormat.format(instance.costvillager) + " - **Steigerung:** " + instance.upgradevillageramount + "mio.",false);
-        eb.addField("","",false);
-        eb.addField(reactionname[5] + " Kritische Chance erhöhen","**Stufe:** " + instance.upgradecritchance + " - **Kosten:** " + numFormat.format(instance.costcritchance) + " - **Steigerung:** " + instance.upgradecritchanceamount + "%",false);
+        eb.addBlankField(false);
+        eb.addField(reactionname[5] + " Kritische Chance erhöhen",crit,false);
         eb.addField(reactionname[6] + " Kritischer Schaden erhöhen","**Stufe:** " + instance.upgradecritdamage + " - **Kosten:** " + numFormat.format(instance.costcritdamage) + " - **Steigerung:** " + instance.upgradecritdamageamount + "%",false);
-        eb.addField("","",false);
+        eb.addBlankField(false);
+        eb.addField(reactionname[8] + " Prestige Punkte erhalten und reseten","",false);
         eb.addField(reactionname[7] + " Speichern und schließen","",false);
         eb.setFooter("Instanz von " + instance.username);
 
@@ -361,14 +399,15 @@ public class Idle implements ServerCommand {
         eb.addField("Start-up:","Vergewissere dich das nicht bereits eine andere Instanz des Spieles aktiv ist!\n" +
                 "```cs\nStarte eine neue Instanz mit \"!idle\"\n```\nDie Nachricht braucht ein paar Sekunden bis sie" +
                 " vollständig aufgebaut wurde",false);
-        eb.addField("Managment: (DEPRECATED)","```cs\nPause das Spiel mit \"!idle close\"\noder\nlass es wieder starten mit \"!idle open\"\n\n" +
-                "De/-aktiviert den Gametask auch im Hintergrund\n```",false);
-        eb.addField("How to play:","Nutze Reaections unterhalb der Nachricht um Verbesserungen zu kaufen\n" +
+        eb.addField("How to play:","Nutze Reactions unterhalb der Nachricht um Verbesserungen zu kaufen\n" +
                 "Nutze die Reaction \uD83D\uDCE4 um zu speichern. Dabei wird dein Spielstand auf der Datenbank abgelegt und die Nachricht geschlossen",false);
         eb.setFooter("Made by ShuraBlack - Head of Server");
 
         channel.sendMessage(eb.build()).complete().pin().queue();
-        channel.purgeMessages(get(channel,1));
+    }
+
+    private int calculatePrestige () {
+        return (instance.upgrade1level + instance.upgrade2level + instance.upgrade3level + instance.upgrade4level + instance.upgradevillager) / 10;
     }
 
     private String SQLsavecode () {
@@ -376,7 +415,6 @@ public class Idle implements ServerCommand {
             return "";
         }
         StringBuilder s = new StringBuilder();
-        s.append("va").append("-").append(instance.value).append("_");
         s.append("vi").append("-").append(instance.villager).append("_");
         s.append("mu").append("-").append(instance.multiplier).append("_");
 
@@ -403,49 +441,6 @@ public class Idle implements ServerCommand {
         return s.toString();
     }
 
-    public void createcode (User u) {
-        StringBuilder s = new StringBuilder();
-        if (instance != null) {
-
-            s.append("va").append("-").append(instance.value).append("_");
-            s.append("vi").append("-").append(instance.villager).append("_");
-            s.append("mu").append("-").append(instance.multiplier).append("_");
-
-            s.append("cuone").append("-").append("CU").append("-").append(instance.costupgrade1).append("-").append("UA").append("-").append(instance.upgrade1amount)
-                    .append("-").append("UL").append("-").append(instance.upgrade1level).append("_");
-
-            s.append("cutwo").append("-").append("CU").append("-").append(instance.costupgrade2).append("-").append("UA").append("-").append(instance.upgrade2amount)
-                    .append("-").append("UL").append("-").append(instance.upgrade2level).append("_");
-
-            s.append("cuthree").append("-").append("CU").append("-").append(instance.costupgrade3).append("-").append("UA").append("-").append(instance.upgrade3amount)
-                    .append("-").append("UL").append("-").append(instance.upgrade3level).append("_");
-
-            s.append("cufour").append("-").append("CU").append("-").append(instance.costupgrade4).append("-").append("UA").append("-").append(instance.upgrade4amount)
-                    .append("-").append("UL").append("-").append(instance.upgrade4level).append("_");
-
-            s.append("vi").append("-").append("CU").append("-").append(instance.costvillager).append("-").append("UA").append("-").append(instance.upgradevillageramount)
-                    .append("-").append("UL").append("-").append(instance.upgradevillager).append("_");
-
-            s.append("cc").append("-").append("CU").append("-").append(instance.costcritchance).append("-").append("UA").append("-").append(instance.upgradecritchanceamount)
-                    .append("-").append("UL").append("-").append(instance.upgradecritchance).append("_");
-
-            s.append("_").append("cd").append("-").append("CU").append("-").append(instance.costcritdamage).append("-").append("UA").append("-").append(instance.upgradecritdamageamount)
-                    .append("-").append("UL").append("-").append(instance.upgradecritdamage).append("_");
-        } else {
-            s.append("xxx");
-        }
-        EmbedBuilder eb = new EmbedBuilder();
-        eb.setTitle("CaptCommunity DIGC");
-        eb.setDescription("**Username:** " + u.getName() + "\n**ID:** " + u.getId());
-        if (s.toString().equals("xxx")) {
-            eb.addField("**Code:** ","No gamecode for this user!",false);
-        } else {
-            eb.addField("**Code:** ",s.toString(),false);
-        }
-        eb.setFooter("Made by ShuraBlack");
-        u.openPrivateChannel().complete().sendMessage(eb.build()).queue();
-    }
-
     public void loadcode (String code) {
         if (instance == null) {
             return;
@@ -455,9 +450,7 @@ public class Idle implements ServerCommand {
         for (String part : parts) {
             String[] values = part.split("-");
 
-            if (values[0].equals("va")) {
-                instance.value = Long.parseLong(values[1]);
-            } else if (values[0].equals("vi") && values.length < 3) {
+            if (values[0].equals("vi") && values.length < 3) {
                 instance.villager = Integer.parseInt(values[1]);
             } else if (values[0].equals("mu")) {
                 instance.multiplier = Double.parseDouble(values[1]);
@@ -496,23 +489,45 @@ public class Idle implements ServerCommand {
         }
     }
 
-    public double round (double value, int scala) {
-        double s = Math.pow(10, scala);
-        return Math.round(value * s) / s;
+    public double round (double number) {
+        String converted = String.valueOf(number);
+        String[] args = converted.split("\\.");
+        return Double.parseDouble(args[0] + "." + args[1].charAt(0));
     }
 
-    private java.util.List<Message> get(MessageChannel channel, int amount) {
-        List<Message> mes = new ArrayList<>();
-        int i = amount + 1;
-        for (Message message : channel.getIterableHistory().cache(false)) {
-            if(!message.isPinned()) {
-                mes.add(message);
-                if(--i <= 0) {
-                    break;
-                }
-            }
+    public String mapEventToCode () {
+        if (war != null) {
+            return "WAR_ev" + war.getEventname() + "_st" + war.getStrength() + "_est"
+                    + war.getEnemystrength() + "_d" + war.getDuration() + "_t" + time;
+        } else if (peace != null) {
+            return "PEACE_ev" + peace.getEventname() + "_bv" + peace.getBonusvalue()
+                    + "_d" + peace.getDuration() + "_t" + time;
         }
-        return mes;
+        return "null";
     }
 
+    public void mapEventToObject (String code) {
+        if (code.equals("null")) {
+            return;
+        } else if (code.startsWith("WAR")) {
+            String[] args = code.replace("WAR_","").split("_");
+            war = new War(
+                    args[0].replace("ev",""),
+                    Integer.parseInt(args[1].replace("st","")),
+                    Integer.parseInt(args[2].replace("est","")),
+                    Integer.parseInt(args[3].replace("d",""))
+            );
+            time = Integer.parseInt(args[4].replace("t",""));
+
+        } else if (code.startsWith("PEACE")) {
+            String[] args = code.replace("PEACE_","").split("_");
+            peace = new Peace(
+                    args[0].replace("ev",""),
+                    Double.parseDouble(args[1].replace("bv","")),
+                    Integer.parseInt(args[2].replace("d",""))
+            );
+            time = Integer.parseInt(args[3].replace("t",""));
+
+        }
+    }
 }
