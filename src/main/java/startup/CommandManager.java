@@ -6,6 +6,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -88,6 +89,11 @@ public class CommandManager {
         // SQL function, create playlists and show them
         this.commands.put("!playlist", new Playlist());
         /*------------------------------------------------------------------------------------------------------------*/
+
+        /*-- Undefined -----------------------------------------------------------------------------------------------*/
+        //
+        this.commands.put("!test", new Test());
+        /*------------------------------------------------------------------------------------------------------------*/
     }
 
     /**
@@ -130,6 +136,18 @@ public class CommandManager {
         String[] args = command.split(" ");
         if((cmd = this.commands.get(args[0].toLowerCase())) != null) {
             cmd.privateperform(command,u);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean performSlash(String command, SlashCommandEvent event) {
+        if (event.getUser().isBot()) {
+            return false;
+        }
+        ServerCommand cmd;
+        if((cmd = this.commands.get(command.toLowerCase())) != null) {
+            cmd.performSlashCommand(event);
             return true;
         }
         return false;

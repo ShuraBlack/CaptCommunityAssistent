@@ -9,7 +9,7 @@ import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 /**
  * Interface for Server Commands
  */
-public interface ServerCommand {
+public interface ServerCommand extends SlashCommand{
 
     /**
      * Action of the Command

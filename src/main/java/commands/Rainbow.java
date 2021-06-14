@@ -3,6 +3,7 @@ package commands;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.util.Timer;
@@ -46,4 +47,9 @@ public class Rainbow implements ServerCommand {
 
     @Override
     public void privateperform(String command, User u) { throw new UnsupportedOperationException(); }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
+    }
 }

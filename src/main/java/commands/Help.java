@@ -4,6 +4,7 @@ import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -87,5 +88,10 @@ public class Help implements ServerCommand {
                 "\"Create T:Voice\" beitritts, wird automatisch ein neuer VoiceChannel erstellt," +
                 " mit der gleichen Maximalanzahl und zusätzlichen Rechten für den Ersteller\n```",false);
         return eb;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

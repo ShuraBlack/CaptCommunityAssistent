@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -162,4 +163,8 @@ public class PlayerRoulette implements ServerCommand {
         channel.sendMessage(eb.build()).queue();
     }
 
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
+    }
 }

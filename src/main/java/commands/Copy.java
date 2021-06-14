@@ -5,6 +5,7 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.MessageBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.io.File;
@@ -107,5 +108,10 @@ public class Copy implements ServerCommand {
                 time.getMinute() + ":" +
                 time.getSecond();
         return s;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

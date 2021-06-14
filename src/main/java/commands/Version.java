@@ -1,5 +1,6 @@
 package commands;
 
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import startup.DiscordBot;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -42,4 +43,9 @@ public class Version implements ServerCommand {
 
     @Override
     public void privateperform(String command, User u) { throw new UnsupportedOperationException(); }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
+    }
 }

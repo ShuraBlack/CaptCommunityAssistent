@@ -5,6 +5,7 @@ import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 public class News implements ServerCommand {
@@ -135,5 +136,10 @@ public class News implements ServerCommand {
                 "```diff\n- Du benötigst ebenfalls mindestens den Member Rang und bestätigst damit auch das du über 18 bist\n```",false);
         eb.addField(ex + " Entfernen,","Entfernt alle abonnierten Channel von dir",false);
         return eb;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

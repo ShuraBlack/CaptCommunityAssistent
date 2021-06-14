@@ -36,4 +36,5 @@ public class ManagerListener extends ListenerAdapter {
         new Server();
         System.out.println("JDA connected and ready for use!");
     }
+
 }

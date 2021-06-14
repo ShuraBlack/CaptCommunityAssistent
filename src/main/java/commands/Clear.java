@@ -5,6 +5,7 @@ import model.util.SQLUtil;
 import commands.types.ServerCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.sql.ResultSet;
@@ -120,5 +121,10 @@ public class Clear implements ServerCommand {
             }
         }
         return mes;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

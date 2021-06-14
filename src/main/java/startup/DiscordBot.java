@@ -6,7 +6,6 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import commands.types.ServerCommand;
 import listener.*;
-import model.web.Server;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -21,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
+
+import static startup.SlashCommandUpdater.updateSlashCommands;
 
 /**
  * Main Class for the Discord Bot
@@ -66,7 +67,7 @@ public class DiscordBot {
 
         INSTANCE = this;
         PROPERTIES = loadProps();
-
+        
         this.playerManager = new DefaultAudioPlayerManager();
         this.musicManager = new MusicManager(this.playerManager);
 
@@ -82,10 +83,15 @@ public class DiscordBot {
                     .addEventListeners(new VoiceChannelListener())
                     .addEventListeners(new LobbyListener())
                     .addEventListeners(new ManagerListener())
+                    .addEventListeners(new SlashListener())
                     .setLargeThreshold(50)
                     .setActivity(Activity.watching("The CaptCom Server"))
                     .setStatus(OnlineStatus.ONLINE)
                     .build();
+
+            if (Boolean.parseBoolean(PROPERTIES.getProperty("update_slash"))) {
+                updateSlashCommands();
+            }
 
         } catch (LoginException e) {
             Slf4JLogger logger = new Slf4JLogger("JDA.Inizial");

@@ -6,6 +6,7 @@ import model.util.ChannelUtil;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -233,5 +234,10 @@ public class Ruler implements ServerCommand {
         eb.addField(platinum.getAsMention() + "Moderator,","Für eine Anfrage zum Moderator oder das hinzufügen von Accounts als Moderator",false);
         eb.setFooter("Das Missbrauchen der Funktion führt zu einem Ausschluss");
         return eb;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

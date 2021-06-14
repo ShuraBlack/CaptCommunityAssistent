@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -218,5 +219,10 @@ public class Dice implements ServerCommand {
         eb.setTitle("Dice Match");
         eb.setThumbnail("https://s8.directupload.net/images/210309/uwqklfqy.png");
         return eb;
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 }

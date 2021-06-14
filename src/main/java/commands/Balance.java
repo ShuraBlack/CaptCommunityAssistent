@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -92,5 +93,52 @@ public class Balance implements ServerCommand {
     @Override
     public void privateperform(String command, User u) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+        TextChannel channel = event.getTextChannel();
+        Member m = event.getMember();
+        event.isAcknowledged();
+        if (!channel.getId().equals(IDLEGAME)
+                && !channel.getId().equals(BLACKJACK)
+                && !channel.getId().equals(SLOTMACHINE)
+                && !channel.getId().equals(PROULETTE)) {
+            EmbedBuilder eb = new EmbedBuilder()
+                    .setColor(Color.WHITE)
+                    .setDescription(m.getAsMention() + ", du kannst diesen command nur in den game Channels nutzen");
+            event.replyEmbeds(eb.build()).setEphemeral(true).queue();
+            return;
+        }
+
+        LoadDriver ld = new LoadDriver();
+        ResultSet rs = ld.executeSQL(SELECTGEMSOFMEMBER(m.getId()));
+        try {
+            if (rs.next()) {
+                NumberFormat numFormat = new DecimalFormat();
+                long rawBalance = rs.getLong(1);
+                String balance = numFormat.format(rawBalance);
+                String prefix = "+";
+                if (rawBalance < 0) {
+                    prefix = "-";
+                }
+                EmbedBuilder eb = new EmbedBuilder()
+                        .setColor(Color.WHITE)
+                        .setAuthor(m.getEffectiveName(), m.getUser().getEffectiveAvatarUrl(), m.getUser().getEffectiveAvatarUrl())
+                        .addField("Kontostand:", "```diff\n" + prefix + " " + balance + "\uD83D\uDC8E \n```", false);
+                event.replyEmbeds(eb.build()).setEphemeral(true).queue();
+            } else {
+                EmbedBuilder eb = new EmbedBuilder()
+                        .setColor(Color.WHITE)
+                        .setDescription(m.getAsMention() + ", du besitzen noch kein Konto.\n" +
+                                "Besuchen sie " + channel.getGuild().getTextChannelById(IDLEGAME).getAsMention() + " und " +
+                                "erspielen sie regelmäßig \uD83D\uDC8E");
+                event.replyEmbeds(eb.build()).setEphemeral(true).queue();
+            }
+        } catch (SQLException throwables) {
+            ld.close();
+            throwables.printStackTrace();
+        }
+        ld.close();
     }
 }

@@ -23,6 +23,9 @@ public class TrackScheduler extends AudioEventAdapter {
     private final String queueId = "834810456370708520";
     private AudioTrack audioTrack = null;
 
+    private boolean repeatQueue = false;
+    private AudioTrack rqAudioTrack = null;
+
     public TrackScheduler(AudioPlayer player) {
         this.player = player;
         this.queue = new LinkedBlockingQueue<>();
@@ -38,12 +41,57 @@ public class TrackScheduler extends AudioEventAdapter {
         if (queue.size() == 0 && audioTrack == null) {
             clearMessages();
         }
+
         if (audioTrack != null) {
             player.startTrack(audioTrack.makeClone(),false);
         } else {
+            if (repeatQueue) {
+                if (player.getPlayingTrack() != null) {
+                    queue.offer(player.getPlayingTrack().makeClone());
+                } else {
+                    queue.offer(rqAudioTrack);
+                }
+            }
             player.startTrack(queue.poll(), false);
             editQueueMessage();
         }
+    }
+
+    public boolean removeTrack (int trackNumber) {
+        if (queue.size() == 0 || queue.size()+1 < trackNumber) {
+            return false;
+        }
+        int count = 0;
+        List<AudioTrack> audioTracks = new ArrayList<>(queue);
+        queue.clear();
+        for (AudioTrack audioTrack : audioTracks) {
+            count++;
+            if (count == trackNumber) {
+               continue;
+            }
+            queue.offer(audioTrack);
+        }
+        editQueueMessage();
+        return true;
+    }
+
+    public boolean playTrack (int trackNumber) {
+        if (queue.size() == 0 || queue.size()+1 < trackNumber) {
+            return false;
+        }
+        int count = 0;
+        List<AudioTrack> audioTracks = new ArrayList<>(queue);
+        queue.clear();
+        for (AudioTrack audioTrack : audioTracks) {
+            count++;
+            if (count == trackNumber) {
+                player.startTrack(audioTrack, false);
+                continue;
+            }
+            queue.offer(audioTrack);
+        }
+        editQueueMessage();
+        return true;
     }
 
     public void randomizeQueue() {
@@ -64,7 +112,7 @@ public class TrackScheduler extends AudioEventAdapter {
         min %= 60L;
         hour %= 60L;
         String url = info.uri;
-        EmbedBuilder eb = (new EmbedBuilder()).setColor(Color.WHITE).addField(info.author, "["
+        EmbedBuilder eb = (new EmbedBuilder()).setColor(new Color(70,130,220)).addField(info.author, "["
                 + info.title + "](" + url + ")", false)
                 .addField("Dauer: ", info.isStream ? "\uD83D\uDD34 Stream" : (hour > 0L ? hour + "h " : "")
                         + (min < 10 ? "0" + min : min) + "m "
@@ -83,6 +131,9 @@ public class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
         if (endReason.mayStartNext) {
+            if (repeatQueue) {
+                rqAudioTrack = track.makeClone();
+            }
             nextTrack();
         }
     }
@@ -100,7 +151,7 @@ public class TrackScheduler extends AudioEventAdapter {
                 s.append("...");
                 break;
             }
-            s.append(count + ". " + at.getInfo().title).append("\n");
+            s.append(count).append(". ").append(at.getInfo().title).append("\n");
             count++;
         }
         long sec = queue.stream().mapToLong(audioTrack -> audioTrack.getInfo().length).sum() / 1000L;
@@ -117,8 +168,18 @@ public class TrackScheduler extends AudioEventAdapter {
         musicChannel.editMessageById(queueId, eb.build()).queue();
     }
 
-    public void clearQueue () {
+    public void makeLoadQueueMessage () {
+        TextChannel musicChannel = DiscordBot.INSTANCE.Manager.getGuildById("286628427140825088")
+                .getTextChannelById(ChannelUtil.MUSIC);
+
+        EmbedBuilder eb = new EmbedBuilder();
+        eb.setTitle("Warteschlange").setDescription("Lade Tracks...");
+        musicChannel.editMessageById(queueId, eb.build()).queue();
+    }
+
+    public void clear () {
         queue.clear();
+        audioTrack = null;
     }
 
     public void clearMessages () {
@@ -128,7 +189,7 @@ public class TrackScheduler extends AudioEventAdapter {
                 .setTitle("Aktuelles Lied")
                 .addField("Author","Titel",false)
                 .addField("Dauer:","00h 00m 00s",false)
-                .setImage("https://s8.directupload.net/images/210422/a5ipoif9.png");
+                .setImage("https://images.wallpaperscraft.com/image/headphones_bw_headset_120277_2560x1440.jpg");
         EmbedBuilder queue = new EmbedBuilder()
                 .setTitle("Warteschlange:");
 
@@ -144,5 +205,12 @@ public class TrackScheduler extends AudioEventAdapter {
         this.audioTrack = audioTrack;
     }
 
+    public boolean isRepeatQueue() {
+        return repeatQueue;
+    }
+
+    public void setRepeatQueue(boolean repeatQueue) {
+        this.repeatQueue = repeatQueue;
+    }
 }
 

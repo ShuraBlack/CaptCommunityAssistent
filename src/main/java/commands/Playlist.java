@@ -9,6 +9,7 @@ import commands.types.ServerCommand;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 
@@ -25,10 +26,6 @@ public class Playlist implements ServerCommand {
     public void performCommand(Member m, TextChannel channel, Message message) {
 
         message.delete().queue();
-
-        if(!m.hasPermission(channel, Permission.ADMINISTRATOR)) {
-            return;
-        }
 
         if (!channel.getId().equals(ChannelUtil.BOTREQUEST)) {
             EmbedBuilder eb = new EmbedBuilder()
@@ -95,7 +92,7 @@ public class Playlist implements ServerCommand {
                     playlists.add(rs.getString(1));
                 }
                 channel.sendMessage(createPlaylistsMessage(playlists,m).build())
-                        .complete().delete().queueAfter(3, TimeUnit.MINUTES);
+                        .complete().delete().queueAfter(1, TimeUnit.MINUTES);
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -124,7 +121,7 @@ public class Playlist implements ServerCommand {
                 s.append(playlist).append("\n");
             }
             eb.addField("Playlist/s: " + playlists.size(), s.toString(),false);
-            eb.setFooter("Diese Nachricht wird automatisch nach 3 Minuten gelöscht");
+            eb.setFooter("Diese Nachricht wird automatisch nach 1 Minuten gelöscht");
         }
         return eb;
     }
@@ -175,6 +172,11 @@ public class Playlist implements ServerCommand {
                 .setDescription(m.getAsMention() + " : " + message)
                 .setFooter("CaptCommunity Playlist");
         channel.sendMessage(eb.build()).queue((mes) -> mes.delete().queueAfter(5, TimeUnit.SECONDS));
+    }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
     }
 
     private class SongtoID {

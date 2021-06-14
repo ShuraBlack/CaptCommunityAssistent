@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 
 import java.awt.*;
@@ -56,4 +57,9 @@ public class Coinflip implements ServerCommand {
 
     @Override
     public void privateperform(String command, User u) { throw new UnsupportedOperationException(); }
+
+    @Override
+    public void performSlashCommand(SlashCommandEvent event) {
+
+    }
 }
